@@ -61,8 +61,8 @@ const TestRunsTable: React.FC = () => {
               </td>
               <td>{run.status}</td>
               <td>{run.domain}</td>
-              <td>View</td>
-              <td>Report</td>
+              <td><button className="view-btn">View</button></td>
+              <td><button className="report-btn">Report</button></td>
             </tr>
           ))}
         </tbody>
