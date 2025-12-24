@@ -1,5 +1,6 @@
 import React, { use, useEffect, useState } from "react";
 import "./TestRunsTable.css";
+import { useNavigate } from "react-router-dom";
 
 // Define the structure of a test run (for future use)
 interface TestRun {
@@ -14,7 +15,7 @@ interface TestRun {
 
 const TestRunsTable: React.FC = () => {
   //Use states
-  
+  const navigate = useNavigate(); // ✅ REQUIRED
   const [runs,setRuns]=useState<TestRun[]>([]);
   const [loading,setLoading]=useState<boolean>(true);
 
@@ -61,7 +62,7 @@ const TestRunsTable: React.FC = () => {
               </td>
               <td>{run.status}</td>
               <td>{run.domain}</td>
-              <td><button className="view-btn">View</button></td>
+              <td><button className="view-btn" onClick={() => navigate(`/test-runs/${run.run_name}`)}>View</button></td>
               <td><button className="report-btn">Report</button></td>
             </tr>
           ))}
