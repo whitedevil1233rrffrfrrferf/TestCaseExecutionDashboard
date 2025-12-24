@@ -1,2 +1,2 @@
-from .testruns import TestRunResponse,TestRunDetailsResponse
+from .testruns import TestRunResponse,TestRunDetailsResponse,TestRunSummaryResponse
 from .filters import FilterResponse,AllFiltersResponse

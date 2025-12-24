@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./TestRunsTable.css";
 import { useNavigate } from "react-router-dom";
 
@@ -13,11 +13,15 @@ interface TestRun {
   domain: string;
 }
 
-const TestRunsTable: React.FC = () => {
-  //Use states
-  const navigate = useNavigate(); // ✅ REQUIRED
-  const [runs,setRuns]=useState<TestRun[]>([]);
-  const [loading,setLoading]=useState<boolean>(true);
+interface TestRunsTableProps {
+  filters?: Record<string, string>;
+}
+
+const TestRunsTable: React.FC<TestRunsTableProps> = ({ filters = {} }) => {
+  const navigate = useNavigate();
+  const [runs, setRuns] = useState<TestRun[]>([]);
+  const [filteredRuns, setFilteredRuns] = useState<TestRun[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Table headers
   const headers = [
@@ -27,14 +31,43 @@ const TestRunsTable: React.FC = () => {
 
   // Get Data from backend
   useEffect(() => {
-  fetch("http://localhost:8000/get_all_test_runs")
-    .then(res => res.json())
-    .then((data: TestRun[]) => {
-      setRuns(data);
-    })
-    .catch(err => console.error(err))
-    .finally(() => setLoading(false));
-}, []);
+    fetch("http://localhost:8000/get_all_test_runs")
+      .then(res => res.json())
+      .then((data: TestRun[]) => {
+        setRuns(data);
+        setFilteredRuns(data);
+      })
+      .catch(err => console.error("Error fetching test runs:", err))
+      .finally(() => setLoading(false));
+  }, []);
+  
+  // Apply filters when they change
+  useEffect(() => {
+    if (Object.keys(filters).length === 0) {
+      setFilteredRuns(runs);
+      return;
+    }
+    
+    const filtered = runs.filter(run => {
+      return Object.entries(filters).every(([key, value]) => {
+        if (!value) return true;
+        
+        switch(key) {
+          case 'domain':
+            return run.domain.toLowerCase() === value.toLowerCase();
+          case 'target':
+            return run.target.toLowerCase() === value.toLowerCase();
+          case 'language':
+            // Assuming language might be in another property or needs special handling
+            return true;
+          default:
+            return true;
+        }
+      });
+    });
+    
+    setFilteredRuns(filtered);
+  }, [filters, runs]);
   return (
     <div className="table-container">
       <table>
@@ -46,7 +79,15 @@ const TestRunsTable: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {runs.map(run => (
+          {loading ? (
+            <tr>
+              <td colSpan={headers.length}>Loading test runs...</td>
+            </tr>
+          ) : filteredRuns.length === 0 ? (
+            <tr>
+              <td colSpan={headers.length}>No test runs match the selected filters</td>
+            </tr>
+          ) : filteredRuns.map(run => (
             <tr key={run.run_id}>
               <td>{run.run_id}</td>
               <td>{run.run_name}</td>

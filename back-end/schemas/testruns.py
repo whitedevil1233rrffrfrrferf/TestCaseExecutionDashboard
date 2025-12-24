@@ -19,3 +19,12 @@ class TestRunDetailsResponse(BaseModel):
     status: str
     detail_id: int    
 
+class TestRunSummaryResponse(BaseModel):
+    run_id: int
+    run_name: str
+    target: Optional[str] = None
+    domain: Optional[str] = None
+    status: str
+    start_ts: str
+    end_ts: Optional[str] = None    
+

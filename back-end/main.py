@@ -5,7 +5,7 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import sys
-from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse
+from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse
 load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
@@ -108,3 +108,34 @@ def get_all_filters():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/test-runs/{run_name}/summary", response_model=TestRunSummaryResponse)
+def get_test_run_summary(run_name: str):
+    try:
+        db = DB(db_url=db_url, debug=False)
+
+        run = db.get_run_by_name(run_name)
+        if not run:
+            raise HTTPException(status_code=404, detail="Run not found")
+
+        # If you store target_id on run, use it to fetch target -> domain
+        domain_name = None
+        if getattr(run, "target_id", None):
+            target = db.get_target_by_id(run.target_id)
+            if target:
+                domain_name = getattr(target, "target_domain", None)
+
+        return TestRunSummaryResponse(
+            run_id=run.run_id,
+            run_name=run.run_name,
+            target=run.target,
+            domain=domain_name,
+            status=run.status,
+            start_ts=run.start_ts,
+            end_ts=run.end_ts
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))    
