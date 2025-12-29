@@ -1,39 +1,127 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+/* ======================
+   TYPES
+====================== */
+
+interface RunSummary {
+  run_id: number;
+  run_name: string;
+  target: string | null;
+  domain: string | null;
+  status: string;
+  start_ts: string;
+  end_ts: string | null;
+}
+
 interface RunDetail {
+  detail_id: number;
   run_name: string;
   testcase_name: string;
   metric_name: string;
   plan_name: string;
-  conversation_id: number;
+  conversation_id: string;
   status: string;
-  detail_id: number;
 }
 
-const RunDetails = () => {
+interface RunDetailsResponse {
+  summary: RunSummary;
+  details: RunDetail[];
+}
+
+/* ======================
+   COMPONENT
+====================== */
+
+const RunDetails: React.FC = () => {
   const { runName } = useParams<{ runName: string }>();
 
+  const [summary, setSummary] = useState<RunSummary | null>(null);
   const [details, setDetails] = useState<RunDetail[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!runName) return;
+    if (!runName) {
+      setError("Run name missing in URL");
+      setLoading(false);
+      return;
+    }
 
-    fetch(`http://localhost:8000/test-runs/${runName}/details`)
-      .then(res => res.json())
-      .then(data => setDetails(data))
-      .catch(err => console.error(err))
+    setLoading(true);
+    setError(null);
+
+    fetch(`http://localhost:8000/test-runs/${encodeURIComponent(runName)}`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data: RunDetailsResponse) => {
+        setSummary(data.summary);
+        setDetails(data.details);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
   }, [runName]);
 
-  if (loading) return <p>Loading...</p>;
+  /* ======================
+     STATES
+  ====================== */
+
+  if (loading) return <p>Loading test run...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (!summary) return <p>No test run found</p>;
+
+  const durationSeconds =
+    summary.end_ts
+      ? Math.round(
+          (new Date(summary.end_ts).getTime() -
+            new Date(summary.start_ts).getTime()) / 1000
+        )
+      : null;
+
+  /* ======================
+     UI
+  ====================== */
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Run Details: {runName}</h2>
+      {/* ===== SUMMARY ===== */}
+      <h2>{summary.run_name}</h2>
 
-      <table border={1} cellPadding={8} cellSpacing={0}>
+      <div style={{ marginBottom: "20px" }}>
+        <p><strong>Target:</strong> {summary.target ?? "-"}</p>
+        <p><strong>Domain:</strong> {summary.domain ?? "-"}</p>
+        <p><strong>Status:</strong> {summary.status}</p>
+        <p>
+          <strong>Started At:</strong>{" "}
+          {new Date(summary.start_ts).toLocaleString()}
+        </p>
+        <p>
+          <strong>Ended At:</strong>{" "}
+          {summary.end_ts
+            ? new Date(summary.end_ts).toLocaleString()
+            : "-"}
+        </p>
+        <p>
+          <strong>Duration:</strong>{" "}
+          {durationSeconds !== null ? `${durationSeconds}s` : "-"}
+        </p>
+      </div>
+
+      {/* ===== DETAILS TABLE ===== */}
+      <table
+        border={1}
+        cellPadding={8}
+        cellSpacing={0}
+        style={{ width: "100%" }}
+      >
         <thead>
           <tr>
             <th>Detail ID</th>
@@ -46,16 +134,24 @@ const RunDetails = () => {
         </thead>
 
         <tbody>
-          {details.map(detail => (
-            <tr key={detail.detail_id}>
-              <td>{detail.detail_id}</td>
-              <td>{detail.testcase_name}</td>
-              <td>{detail.metric_name}</td>
-              <td>{detail.plan_name}</td>
-              <td>{detail.conversation_id}</td>
-              <td>{detail.status}</td>
+          {details.length === 0 ? (
+            <tr>
+              <td colSpan={6} style={{ textAlign: "center" }}>
+                No test case details found
+              </td>
             </tr>
-          ))}
+          ) : (
+            details.map((d) => (
+              <tr key={d.detail_id}>
+                <td>{d.detail_id}</td>
+                <td>{d.testcase_name}</td>
+                <td>{d.metric_name}</td>
+                <td>{d.plan_name}</td>
+                <td>{d.conversation_id}</td>
+                <td>{d.status}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

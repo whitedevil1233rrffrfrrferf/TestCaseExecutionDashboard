@@ -1,13 +1,19 @@
 import os
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from openpyxl import Workbook
+import tempfile
+import os
 import mysql.connector
+import uvicorn
 from mysql.connector import Error
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import sys
-from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse
+from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse
 load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+
 
 
 from lib.orm import DB
@@ -69,16 +75,38 @@ def get_all_test_runs():
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get(
-    "/test-runs/{run_name}/details",
-    response_model=list[TestRunDetailsResponse]
+    "/test-runs/{run_name}",
+    response_model=TestRunFullResponse
 )
-def get_test_run_details(run_name: str):
+def get_test_run(run_name: str):
     try:
         db = DB(db_url=db_url, debug=False)
 
+        # ---------- RUN SUMMARY ----------
+        run = db.get_run_by_name(run_name)
+        if not run:
+            raise HTTPException(status_code=404, detail="Run not found")
+
+        domain_name = None
+        if getattr(run, "target_id", None):
+            target = db.get_target_by_id(run.target_id)
+            if target:
+                domain_name = getattr(target, "target_domain", None)
+
+        summary = TestRunSummaryResponse(
+            run_id=run.run_id,
+            run_name=run.run_name,
+            target=run.target,
+            domain=domain_name,
+            status=run.status,
+            start_ts=run.start_ts,
+            end_ts=run.end_ts
+        )
+
+        # ---------- RUN DETAILS ----------
         details = db.get_all_run_details_by_run_name(run_name)
 
-        return [
+        details_response = [
             TestRunDetailsResponse(
                 run_name=d.run_name,
                 testcase_name=d.testcase_name,
@@ -91,9 +119,17 @@ def get_test_run_details(run_name: str):
             for d in details
         ]
 
+        # ---------- FINAL RESPONSE ----------
+        return TestRunFullResponse(
+            summary=summary,
+            details=details_response
+        )
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @app.get("/get_all_filters", response_model=AllFiltersResponse)
 def get_all_filters():
     try:
@@ -139,3 +175,141 @@ def get_test_run_summary(run_name: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))    
+    
+@app.get(
+    "/test-runs/{run_name}/evaluation-summary",
+    response_model=RunEvaluationSummaryResponse
+)
+def get_run_evaluation_summary(run_name: str):
+    try:
+        db = DB(db_url=db_url, debug=False)
+        run= db.get_run_by_name(run_name)
+        if not run:
+            raise HTTPException(status_code=404, detail="Run not found")
+        domain_name = None
+        if getattr(run, "target_id", None):
+            target = db.get_target_by_id(run.target_id)
+            if target:
+                domain_name = getattr(target, "target_domain", None)
+        run_summary = TestRunSummaryResponse(
+            run_id=run.run_id,
+            run_name=run.run_name,
+            target=run.target,
+            domain=domain_name,
+            status=run.status,
+            start_ts=run.start_ts,
+            end_ts=run.end_ts
+        )        
+        details = db.get_all_run_details_by_run_name(run_name)
+
+        evaluations=[]
+
+        for d in details:
+            conv = db.get_conversation_by_id(d.conversation_id)
+            if not conv:
+                continue
+            evaluations.append(
+                EvaluationItemResponse(
+                    detail_id=d.detail_id,
+                    testcase=conv.testcase,
+                    agent_response=conv.agent_response,
+                    evaluation_score=conv.evaluation_score,
+                    evaluation_reason=conv.evaluation_reason,
+                    evaluation_ts=conv.evaluation_ts
+                )
+            )
+
+        return RunEvaluationSummaryResponse(
+            run=run_summary,
+            evaluations=evaluations
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/test-runs/{run_name}/evaluation-report")
+def download_evaluation_report(run_name: str):
+    try:
+        db = DB(db_url=db_url, debug=False)
+
+        # -------- Run summary --------
+        run = db.get_run_by_name(run_name)
+        if not run:
+            raise HTTPException(status_code=404, detail="Run not found")
+
+        domain_name = None
+        if getattr(run, "target_id", None):
+            target = db.get_target_by_id(run.target_id)
+            if target:
+                domain_name = getattr(target, "target_domain", None)
+
+        # -------- Get details --------
+        details = db.get_all_run_details_by_run_name(run_name)
+
+        # -------- Create Excel --------
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Evaluation Report"
+
+        # -------- Run summary section --------
+        ws.append(["Run Name", run.run_name])
+        ws.append(["Target", run.target])
+        ws.append(["Domain", domain_name])
+        ws.append(["Status", run.status])
+        ws.append(["Start Time", run.start_ts])
+        ws.append(["End Time", run.end_ts])
+        ws.append([])  # empty row
+
+        # -------- Table header --------
+        ws.append([
+            "Detail ID",
+            "Testcase",
+            "Agent Response",
+            "Evaluation Score",
+            "Evaluation Reason",
+            "Evaluation Time"
+        ])
+
+        # -------- Rows --------
+        for d in details:
+            conv = db.get_conversation_by_id(d.conversation_id)
+            if not conv:
+                continue
+
+            ws.append([
+                d.detail_id,
+                conv.testcase,
+                conv.agent_response,
+                conv.evaluation_score,
+                conv.evaluation_reason,
+                conv.evaluation_ts
+            ])
+
+        # -------- Save temp file --------
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+        wb.save(tmp_file.name)
+        tmp_file.close()
+
+        return FileResponse(
+            path=tmp_file.name,
+            filename=f"{run_name}_evaluation_report.xlsx",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))     
+
+
+
+
+if __name__ == "__main__":
+    
+
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

@@ -41,6 +41,7 @@ const TestRunsTable: React.FC<TestRunsTableProps> = ({ filters = {} }) => {
       .finally(() => setLoading(false));
   }, []);
   
+  
   // Apply filters when they change
   useEffect(() => {
     if (Object.keys(filters).length === 0) {
@@ -104,7 +105,19 @@ const TestRunsTable: React.FC<TestRunsTableProps> = ({ filters = {} }) => {
               <td>{run.status}</td>
               <td>{run.domain}</td>
               <td><button className="view-btn" onClick={() => navigate(`/test-runs/${run.run_name}`)}>View</button></td>
-              <td><button className="report-btn">Report</button></td>
+              <td><button
+  className="report-btn"
+  onClick={() => {
+    const link = document.createElement("a");
+    link.href = `http://localhost:8000/test-runs/${run.run_name}/evaluation-report`;
+    link.setAttribute("download", `${run.run_name}-evaluation.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }}
+>
+  Report
+</button></td>
             </tr>
           ))}
         </tbody>

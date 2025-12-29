@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional,List
 
 class TestRunResponse(BaseModel):
     run_id: int
@@ -26,5 +26,22 @@ class TestRunSummaryResponse(BaseModel):
     domain: Optional[str] = None
     status: str
     start_ts: str
-    end_ts: Optional[str] = None    
+    end_ts: Optional[str] = None
 
+
+class TestRunFullResponse(BaseModel):
+    summary: TestRunSummaryResponse
+    details: List[TestRunDetailsResponse]  
+
+class EvaluationItemResponse(BaseModel):
+    detail_id: int
+    testcase: str
+    agent_response: Optional[str]
+    evaluation_score: Optional[int]
+    evaluation_reason: Optional[str]
+    evaluation_ts: Optional[str]
+
+
+class RunEvaluationSummaryResponse(BaseModel):
+    run: TestRunSummaryResponse
+    evaluations: List[EvaluationItemResponse]
