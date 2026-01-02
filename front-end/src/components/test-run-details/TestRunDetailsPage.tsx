@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import styles from "./TestRunDetails.module.css";
+import Modal from "./Modal";
+import RunTimeline from "./RunTimeline";
 
 /* ======================
    TYPES
@@ -41,7 +44,8 @@ const RunDetails: React.FC = () => {
   const [details, setDetails] = useState<RunDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
+  const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
   useEffect(() => {
     if (!runName) {
       setError("Run name missing in URL");
@@ -74,8 +78,8 @@ const RunDetails: React.FC = () => {
      STATES
   ====================== */
 
-  if (loading) return <p>Loading test run...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (loading) return <p className={styles.loading}>Loading test run...</p>;
+  if (error) return <p className={styles.error}>{error}</p>;
   if (!summary) return <p>No test run found</p>;
 
   const durationSeconds =
@@ -91,69 +95,110 @@ const RunDetails: React.FC = () => {
   ====================== */
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div className={styles.container}>
       {/* ===== SUMMARY ===== */}
-      <h2>{summary.run_name}</h2>
+      <div className={styles.summaryCard}>
+        <h1 className={styles.title}>
+          {summary.run_name}
+        </h1>
 
-      <div style={{ marginBottom: "20px" }}>
-        <p><strong>Target:</strong> {summary.target ?? "-"}</p>
-        <p><strong>Domain:</strong> {summary.domain ?? "-"}</p>
-        <p><strong>Status:</strong> {summary.status}</p>
-        <p>
-          <strong>Started At:</strong>{" "}
-          {new Date(summary.start_ts).toLocaleString()}
-        </p>
-        <p>
-          <strong>Ended At:</strong>{" "}
-          {summary.end_ts
-            ? new Date(summary.end_ts).toLocaleString()
-            : "-"}
-        </p>
-        <p>
-          <strong>Duration:</strong>{" "}
-          {durationSeconds !== null ? `${durationSeconds}s` : "-"}
-        </p>
+        <div className={styles.detailsGrid}>
+          <div className={styles.detailCard}>
+            <div className={styles.detailLabel}>Target</div>
+            <div className={styles.detailValue}>
+              {summary.target ?? "-"}
+            </div>
+          </div>
+
+          <div className={styles.detailCard}>
+            <div className={styles.detailLabel}>Domain</div>
+            <div className={styles.detailValue}>
+              {summary.domain ?? "-"}
+            </div>
+          </div>
+
+          <div className={styles.detailCard}>
+            <div className={styles.detailLabel}>Status</div>
+            <div className={`${styles.detailValue} ${
+              summary.status === "COMPLETED" ? styles.statusCompleted : 
+              summary.status === "RUNNING" ? styles.statusRunning : 
+              styles.statusFailed
+            }`}>
+              {summary.status}
+            </div>
+          </div>
+
+          <div className={styles.detailCard}>
+            <div className={styles.detailLabel}>Started At</div>
+            <div className={styles.detailValue}>
+              {new Date(summary.start_ts).toLocaleString()}
+            </div>
+          </div>
+
+          <div className={styles.detailCard}>
+            <div className={styles.detailLabel}>Ended At</div>
+            <div className={styles.detailValue}>
+              {summary.end_ts
+                ? new Date(summary.end_ts).toLocaleString()
+                : "-"}
+            </div>
+          </div>
+
+          <div className={styles.detailCard}>
+            <div className={styles.detailLabel}>Duration</div>
+            <div className={styles.detailValue}>
+              {durationSeconds !== null ? `${durationSeconds}s` : "-"}
+            </div>
+          </div>
+        </div>
       </div>
-
+      <RunTimeline runName={summary.run_name} hoveredMetric={hoveredMetric}/>          
       {/* ===== DETAILS TABLE ===== */}
-      <table
-        border={1}
-        cellPadding={8}
-        cellSpacing={0}
-        style={{ width: "100%" }}
-      >
-        <thead>
-          <tr>
-            <th>Detail ID</th>
-            <th>Testcase</th>
-            <th>Metric</th>
-            <th>Plan</th>
-            <th>Conversation ID</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {details.length === 0 ? (
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
             <tr>
-              <td colSpan={6} style={{ textAlign: "center" }}>
-                No test case details found
-              </td>
+              <th>Detail ID</th>
+              <th>Testcase</th>
+              <th>Metric</th>
+              <th>Plan</th>
+              <th>Conversation ID</th>
+              <th>Status</th>
             </tr>
-          ) : (
-            details.map((d) => (
-              <tr key={d.detail_id}>
-                <td>{d.detail_id}</td>
-                <td>{d.testcase_name}</td>
-                <td>{d.metric_name}</td>
-                <td>{d.plan_name}</td>
-                <td>{d.conversation_id}</td>
-                <td>{d.status}</td>
+          </thead>
+
+          <tbody>
+            {details.length === 0 ? (
+              <tr>
+                <td colSpan={6} className={styles.emptyState}>
+                  No test case details found
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              details.map((d) => (
+                  <tr key={d.detail_id} 
+                      data-bs-toggle="modal"
+                      data-bs-target="#conversationModal"
+                      onClick={() => setSelectedConversationId(Number(d.conversation_id))}
+                      onMouseEnter={() => setHoveredMetric(d.metric_name)}
+                      onMouseLeave={() => setHoveredMetric(null)}
+                      >
+                  <td>{d.detail_id}</td>
+                  <td>{d.testcase_name}</td>
+                  <td>{d.metric_name}</td>
+                  <td>{d.plan_name}</td>
+                  <td>{d.conversation_id}</td>
+                  <td>{d.status}</td>
+                  
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+        <Modal conversationId={selectedConversationId} />    
+        
+
+      </div>
     </div>
   );
 };

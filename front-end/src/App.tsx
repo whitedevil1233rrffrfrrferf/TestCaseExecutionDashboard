@@ -4,6 +4,7 @@ import logo from './logo.svg';
 import './App.css';
 import TestRunsPage from './components/test-runs/TestRunsPage';
 import TestRunDetails from './components/test-run-details/TestRunDetailsPage';
+import NewTestRunPage from "./components/new-test-run/NewTestRunPage";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
 
       {/* 👇 THIS is the route you're navigating to */}
       <Route path="/test-runs/:runName" element={<TestRunDetails />} />
+      <Route path="/create-test-run" element={<NewTestRunPage />} />
     </Routes>
   );
 }

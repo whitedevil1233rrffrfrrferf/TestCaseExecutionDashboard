@@ -10,6 +10,7 @@ class AllFiltersResponse(BaseModel):
     domains: List[FilterResponse]
     languages: List[FilterResponse]
     targets: List[FilterResponse]
-    
+    plans: Optional[List[FilterResponse]]=[]
+    metrics: Optional[List[FilterResponse]]=[]
       
     

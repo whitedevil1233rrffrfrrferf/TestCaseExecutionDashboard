@@ -26,7 +26,7 @@ const TestRunsTable: React.FC<TestRunsTableProps> = ({ filters = {} }) => {
   // Table headers
   const headers = [
     "Run Id", "Run Name", "Target", "Started At","Ended At", 
-    "Duration", "Status", "Domain", "View", "Report"
+    "Duration", "Status", "Domain",  "Report"
   ];
 
   // Get Data from backend
@@ -89,7 +89,10 @@ const TestRunsTable: React.FC<TestRunsTableProps> = ({ filters = {} }) => {
               <td colSpan={headers.length}>No test runs match the selected filters</td>
             </tr>
           ) : filteredRuns.map(run => (
-            <tr key={run.run_id}>
+            <tr 
+            key={run.run_id} 
+            onClick={() => navigate(`/test-runs/${run.run_name}`)}
+            >
               <td>{run.run_id}</td>
               <td>{run.run_name}</td>
               <td>{run.target}</td>
@@ -104,7 +107,7 @@ const TestRunsTable: React.FC<TestRunsTableProps> = ({ filters = {} }) => {
               </td>
               <td>{run.status}</td>
               <td>{run.domain}</td>
-              <td><button className="view-btn" onClick={() => navigate(`/test-runs/${run.run_name}`)}>View</button></td>
+              {/* <td><button className="view-btn" onClick={() => navigate(`/test-runs/${run.run_name}`)}>View</button></td> */}
               <td><button
   className="report-btn"
   onClick={() => {

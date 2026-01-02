@@ -68,6 +68,7 @@ thead th:last-child {
 
 tbody tr {
   transition: all 0.2s ease;
+  cursor: pointer;
   border-bottom: 1px solid #e5e7eb;
 }
 

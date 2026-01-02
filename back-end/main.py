@@ -10,13 +10,12 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import sys
-from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse
+from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse,ConversationResponse,TestCaseResponse,FullConversationResponse, TimelineEvent
 load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
-
-
 from lib.orm import DB
+
 db_url = (
             f"mysql+mysqlconnector://"
             f"{os.getenv('DB_USER')}:"
@@ -140,6 +139,8 @@ def get_all_filters():
             domains=[FilterResponse(filter_name=d.name) for d in db.domains],
             languages=[FilterResponse(filter_name=l.name) for l in db.languages],
             targets=[FilterResponse(filter_name=t.target_name) for t in db.targets],
+            plans=[FilterResponse(filter_name=p.plan_name) for p in db.plans],
+            metrics=[FilterResponse(filter_name=m.metric_name) for m in db.metrics]
         )
 
     except Exception as e:
@@ -206,6 +207,7 @@ def get_run_evaluation_summary(run_name: str):
 
         for d in details:
             conv = db.get_conversation_by_id(d.conversation_id)
+            print(conv.evaluation_score)
             if not conv:
                 continue
             evaluations.append(
@@ -302,6 +304,82 @@ def download_evaluation_report(run_name: str):
         raise HTTPException(status_code=500, detail=str(e))     
 
 
+@app.get(
+    "/conversations/{conversation_id}",
+    response_model=ConversationResponse
+)
+def get_conversation(conversation_id: int):
+    db = DB(db_url=db_url, debug=False)
+    conversation = db.get_conversation_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return conversation
+
+@app.get(
+    "/testcases/{testcase_name}",
+    response_model=TestCaseResponse
+)
+def get_conversation(testcase_name: str):
+    db = DB(db_url=db_url, debug=False)
+    testcase = db.get_testcase_by_name(testcase_name)
+    if not testcase:
+        raise HTTPException(status_code=404, detail="Testcase not found")
+    return TestCaseResponse(
+        user_prompt=testcase.prompt.user_prompt,
+        system_prompt=testcase.prompt.system_prompt
+    )
+
+@app.get(
+    "/conversations/full/{conversation_id}",
+    response_model=FullConversationResponse
+)
+def get_full_conversation(conversation_id: int):
+    db = DB(db_url=db_url, debug=False)
+    conversation = db.get_conversation_by_id(conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    testcase_name = conversation.testcase
+    testcase = db.get_testcase_by_name(testcase_name)
+    if not testcase:
+        user_prompt = None
+        system_prompt = None
+    else:
+        user_prompt = getattr(testcase.prompt, "user_prompt", None)
+        system_prompt = getattr(testcase.prompt, "system_prompt", None)
+
+    return FullConversationResponse(
+        user_prompt=user_prompt,
+        system_prompt=system_prompt,
+        agent_response=conversation.agent_response,
+        testcase_name=testcase_name,
+        conversation_id=conversation_id,
+        target=conversation.target
+    )
+
+
+@app.get("/conversations/{conversation_id}/timeline")
+def get_conversation_timeline_api(conversation_id: int):
+    db = DB(db_url=db_url, debug=False)
+    timeline = db.get_conversation_timeline(conversation_id)
+
+    if not timeline:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return timeline
+
+@app.get(
+    "/test-runs/{run_name}/timeline",
+    response_model=list[TimelineEvent]
+)
+def get_test_run_timeline(run_name: str):
+    db = DB(db_url=db_url, debug=False)
+
+    timeline = db.get_run_timeline(run_name)
+    if not timeline:
+        raise HTTPException(status_code=404, detail="No timeline found")
+
+    return timeline
 
 
 if __name__ == "__main__":

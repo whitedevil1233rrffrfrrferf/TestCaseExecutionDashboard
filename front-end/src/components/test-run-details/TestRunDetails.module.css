@@ -1,0 +1,222 @@
+/* ======================
+   CONTAINER
+====================== */
+.container {
+  padding: 32px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+/* ======================
+   SUMMARY CARD
+====================== */
+.summaryCard {
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.title {
+  margin: 0 0 20px 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+/* ======================
+   DETAILS GRID
+====================== */
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.detailCard {
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease-in-out;
+}
+
+.detailCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+.detailLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+.detailValue {
+  font-size: 18px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+
+.statusCompleted {
+  color: #059669 !important;
+}
+
+.statusRunning {
+  color: #d97706 !important;
+}
+
+.statusFailed {
+  color: #dc2626 !important;
+}
+
+/* ======================
+   TABLE STYLING
+====================== */
+.tableContainer {
+  background-color: white;
+  border-radius: 12px;
+  margin-top: 3rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+
+.table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.table th {
+  padding: 18px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s ease-in-out;
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc;
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table td {
+  padding: 16px 16px;
+  color: #475569;
+  font-weight: 500;
+  border: none;
+  vertical-align: middle;
+  font-size: 16px;
+}
+
+.table td:first-child {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.table td:last-child {
+  font-weight: 600;
+}
+
+/* ======================
+   EMPTY STATE
+====================== */
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* ======================
+   LOADING & ERROR STATES
+====================== */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #64748b;
+  font-size: 18px;
+}
+
+.error {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* ======================
+   RESPONSIVE DESIGN
+====================== */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .summaryCard {
+    padding: 16px;
+  }
+  
+  .title {
+    font-size: 28px;
+  }
+  
+  .detailsGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .tableContainer {
+    overflow-x: auto;
+  }
+  
+  .table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table th,
+  .table td {
+    padding: 12px 12px;
+    font-size: 14px;
+  }
+  
+  .detailCard {
+    padding: 10px;
+  }
+  
+  .detailValue {
+    font-size: 16px;
+  }
+}
