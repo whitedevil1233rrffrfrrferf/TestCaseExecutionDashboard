@@ -148,13 +148,24 @@ const RunDetails: React.FC = () => {
      UI
   ====================== */
 
+  // Get the plan name from the first detail (since all are the same)
+  const planName = details[0]?.plan_name;
+
   return (
     <div className={styles.container}>
       {/* ===== SUMMARY ===== */}
       <div className={styles.summaryCard}>
-        <h1 className={styles.title}>
-          {summary.run_name}
-        </h1>
+        <div className={styles.headerRow}>
+          <h1 className={styles.title}>
+            {summary.run_name}
+          </h1>
+          {planName && (
+            <div className={styles.planBadge}>
+              <i className="bi-journal-text me-2"></i>
+              {planName}
+            </div>
+          )}
+        </div>
 
         <div className={styles.detailsGrid}>
           <DetailCard
@@ -193,75 +204,81 @@ const RunDetails: React.FC = () => {
       </div>
       </div>
       <RunTimeline runName={summary.run_name} hoveredMetric={hoveredMetric}/>       
-      <RunDetailsFilters
-        metrics={filtersData.metrics}
-        statuses={filtersData.statuses}
-        loading={loading}
-        activeFilters={activeFilters}
-        onFilterChange={handleFilterChange}
-      /> 
+      {/* ===== FILTERS ===== */}
+      <div className={styles.filtersContainer}>
+        <div className={styles.filtersCard}>
+          <div className={styles.filtersTitle}>
+            <i className="bi-funnel me-2"></i>
+            Filter Results
+          </div>
+          <RunDetailsFilters
+            metrics={filtersData.metrics}
+            statuses={filtersData.statuses}
+            loading={loading}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+      </div>
       {/* ===== DETAILS TABLE ===== */}
       <div className="table-responsive table-container">
-  <table className="table table-hover table-bordered align-middle mb-0">
-    <thead className="table-light">
-      <tr>
-        
-        <th>Testcase</th>
-        <th>Metric</th>
-        <th>Plan</th>
-        <th>Score</th>
-        <th>Status</th>
-      </tr>
-    </thead>
+        <table className="table table-hover table-bordered align-middle mb-0">
+          <thead className="table-light">
+            <tr>
+              
+              <th>Testcase</th>
+              <th>Metric</th>
+              <th>Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
 
-    <tbody>
-      {details.length === 0 ? (
-        <tr>
-          <td colSpan={6} className="text-center py-4 text-muted">
-            No test case details found
-          </td>
-        </tr>
-      ) : (
-        details.map((d) => (
-          <tr
-            key={d.detail_id}
-            role="button"
-            className="cursor-pointer"
-            data-bs-toggle="modal"
-            data-bs-target="#conversationModal"
-            onClick={() =>
-              setSelectedConversationId(Number(d.conversation_id))
-            }
-            onMouseEnter={() => setHoveredMetric(d.metric_name)}
-            onMouseLeave={() => setHoveredMetric(null)}
-          >
-            
-            <td>{d.testcase_name}</td>
-            <td>{d.metric_name}</td>
-            <td>{d.plan_name}</td>
-            
-            <td>{d.score === null ? "-" : d.score}</td>
-            <td>
-              <span
-                className={`badge ${
-                  d.status === "PASSED"
-                    ? "bg-success"
-                    : d.status === "FAILED"
-                    ? "bg-danger"
-                    : "bg-secondary"
-                }`}
-              >
-                {d.status}
-              </span>
-            </td>
-          </tr>
-        ))
-      )}
-    </tbody>
-  </table>
-</div>
+          <tbody>
+            {details.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-4 text-muted">
+                  No test case details found
+                </td>
+              </tr>
+            ) : (
+              details.map((d) => (
+                <tr
+                  key={d.detail_id}
+                  role="button"
+                  className="cursor-pointer"
+                  data-bs-toggle="modal"
+                  data-bs-target="#conversationModal"
+                  onClick={() =>
+                    setSelectedConversationId(Number(d.conversation_id))
+                  }
+                  onMouseEnter={() => setHoveredMetric(d.metric_name)}
+                  onMouseLeave={() => setHoveredMetric(null)}
+                >
+                  
+                  <td>{d.testcase_name}</td>
+                  <td>{d.metric_name}</td>
+                  <td>{d.score === null ? "-" : d.score}</td>
+                  <td>
+                    <span
+                      className={`badge ${
+                        d.status === "PASSED"
+                          ? "bg-success"
+                          : d.status === "FAILED"
+                          ? "bg-danger"
+                          : "bg-secondary"
+                      }`}
+                    >
+                      {d.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        <Modal conversationId={selectedConversationId} />    
+      <Modal conversationId={selectedConversationId} />    
         
     </div>
   );

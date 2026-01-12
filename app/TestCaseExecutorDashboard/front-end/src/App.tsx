@@ -5,16 +5,22 @@ import './App.css';
 import TestRunsPage from './components/test-runs/TestRunsPage';
 import TestRunDetails from './components/test-run-details/TestRunDetailsPage';
 import NewTestRunPage from "./components/new-test-run/NewTestRunPage";
+import Navbar from "./components/common/Navbar";
+
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<TestRunsPage />} />
+     <div className="app-container">
+        <Navbar /> {/* Add the Navbar here */}
+        <Routes>
+          <Route path="/" element={<TestRunsPage />} />
 
-      {/* 👇 THIS is the route you're navigating to */}
-      <Route path="/test-runs/:runName" element={<TestRunDetails />} />
-      <Route path="/create-test-run" element={<NewTestRunPage />} />
-    </Routes>
+          {/* 👇 THIS is the route you're navigating to */}
+          <Route path="/test-runs/:runName" element={<TestRunDetails />} />
+          <Route path="/create-test-run" element={<NewTestRunPage />} />
+        </Routes>
+     </div>
+    
   );
 }
 

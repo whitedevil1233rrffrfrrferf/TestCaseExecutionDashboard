@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import "./TestRunsTable.css";
 import { useNavigate } from "react-router-dom";
 import AppButton from "../common/Button/AppButton";
+import { Pagination } from "react-bootstrap";
 
 // Define the structure of a test run (for future use)
 interface TestRun {
@@ -24,6 +25,8 @@ const TestRunsTable: React.FC<Props> = ({filters}) => {
   const [runs, setRuns] = useState<TestRun[]>([]);
   const [filteredRuns, setFilteredRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Table headers
   const headers = [
@@ -35,7 +38,7 @@ const TestRunsTable: React.FC<Props> = ({filters}) => {
   useEffect(() => {
     setLoading(true);
     
-    const params = new URLSearchParams(filters).toString(); // { domain: "qaoncloud.com" } → "domain=qaoncloud.com"
+    const params = new URLSearchParams(filters).toString();
     const url = `http://localhost:8000/get_all_test_runs?${params}`;
     
     fetch(url)
@@ -43,10 +46,26 @@ const TestRunsTable: React.FC<Props> = ({filters}) => {
       .then((data: TestRun[]) => {
         setRuns(data);
         setFilteredRuns(data);
+        setCurrentPage(1); // Reset to first page when filters change
       })
       .catch(err => console.error("Error fetching test runs:", err))
       .finally(() => setLoading(false));
   }, [filters]);
+
+  // Get current runs
+  const indexOfLastRun = currentPage * itemsPerPage;
+  const indexOfFirstRun = indexOfLastRun - itemsPerPage;
+  const currentRuns = filteredRuns.slice(indexOfFirstRun, indexOfLastRun);
+  const totalPages = Math.ceil(filteredRuns.length / itemsPerPage);
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  // Generate page numbers for pagination
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
   
   
   // Apply filters when they change
@@ -77,35 +96,35 @@ const TestRunsTable: React.FC<Props> = ({filters}) => {
   //   setFilteredRuns(filtered);
   // }, [filters, runs]);
   return (
-    <div className="table-responsive table-container">
-  <table className="table table-hover table-bordered align-middle mb-0">
-    <thead className="table-light">
-      <tr>
-        {headers.map(header => (
-          <th key={header} scope="col">
-            {header}
-          </th>
-        ))}
-      </tr>
-    </thead>
+    <div>
+      <div className="table-responsive table-container mb-3">
+        <table className="table table-hover table-bordered align-middle mb-0">
+          <thead className="table-light">
+            <tr>
+              {headers.map(header => (
+                <th key={header} scope="col">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
 
-    <tbody>
-  {loading ? (
-    <tr>
-      <td colSpan={headers.length} className="text-center py-4">
-        <div className="spinner-border spinner-border-sm me-2" role="status" />
-        Loading test runs...
-      </td>
-    </tr>
-  ) : !Array.isArray(filteredRuns) || filteredRuns.length === 0 ? (
-    <tr>
-      <td colSpan={headers.length} className="text-center py-4 text-muted">
-        No test runs match the selected filters
-      </td>
-    </tr>
-  ) : (
-    // ✅ Option 1: wrap map with Array.isArray
-    Array.isArray(filteredRuns) && filteredRuns.map(run => (
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={headers.length} className="text-center py-4">
+                  <div className="spinner-border spinner-border-sm me-2" role="status" />
+                  Loading test runs...
+                </td>
+              </tr>
+            ) : !Array.isArray(currentRuns) || currentRuns.length === 0 ? (
+              <tr>
+                <td colSpan={headers.length} className="text-center py-4 text-muted">
+                  No test runs match the selected filters
+                </td>
+              </tr>
+            ) : (
+              currentRuns.map(run => (
       <tr
         key={run.run_id}
         role="button"
@@ -165,6 +184,46 @@ const TestRunsTable: React.FC<Props> = ({filters}) => {
   </table>
   
 </div>
+      
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center">
+          <Pagination className="mb-0">
+            <Pagination.First 
+              onClick={() => paginate(1)} 
+              disabled={currentPage === 1} 
+            />
+            <Pagination.Prev 
+              onClick={() => paginate(currentPage - 1)} 
+              disabled={currentPage === 1} 
+            />
+            
+            {pageNumbers.map(number => (
+              <Pagination.Item 
+                key={number} 
+                active={number === currentPage}
+                onClick={() => paginate(number)}
+              >
+                {number}
+              </Pagination.Item>
+            ))}
+            
+            <Pagination.Next 
+              onClick={() => paginate(currentPage + 1)} 
+              disabled={currentPage === totalPages} 
+            />
+            <Pagination.Last 
+              onClick={() => paginate(totalPages)} 
+              disabled={currentPage === totalPages} 
+            />
+          </Pagination>
+        </div>
+      )}
+      
+      <div className="text-muted text-center mt-2">
+        Showing {currentRuns.length} of {filteredRuns.length} test runs
+      </div>
+    </div>
 
   );
 };
