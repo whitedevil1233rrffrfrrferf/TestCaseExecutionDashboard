@@ -1261,33 +1261,38 @@ class DB:
             return 0
         return 1 if s1 > s2 else -1
     
-    def get_all_runs(self) -> list[Run]:
-        """
-        Fetches all test runs from the database.
-
-        Returns:
-            list[Run]: List of Run objects (empty list if none found)
-        """
+    def get_all_runs(self, domain=None, target=None, status=None):
         with self.Session() as session:
-            sql = select(TestRuns)
+            sql = (
+                select(TestRuns)
+                .outerjoin(Targets, TestRuns.target_id == Targets.target_id)
+                .outerjoin(Domains, Targets.domain_id == Domains.domain_id)
+            )
+
+            if target:
+                sql = sql.where(Targets.target_name == target)
+
+            if domain:
+                sql = sql.where(Domains.domain_name == domain)
+                # OR if frontend sends domain_id:
+                # sql = sql.where(Domains.domain_id == domain)
+
+            if status:
+                sql = sql.where(TestRuns.status == status)
+
             results = session.execute(sql).scalars().all()
 
-            if not results:
-                self.logger.debug("No test runs found.")
-                return []
-
-            runs: list[Run] = []
-
-            for result in results:
+            runs = []
+            for r in results:
                 runs.append(
                     Run(
-                        target=result.target.target_name if result.target else None,
-                        run_name=str(result.run_name),
-                        target_id=getattr(result, 'target_id'),
-                        start_ts=result.start_ts.isoformat(),
-                        end_ts=result.end_ts.isoformat() if result.end_ts else None,
-                        status=str(result.status),
-                        run_id=getattr(result, 'run_id')
+                        run_id=r.run_id,
+                        run_name=r.run_name,
+                        target=r.target.target_name if r.target else None,
+                        target_id=r.target_id,
+                        start_ts=r.start_ts.isoformat(),
+                        end_ts=r.end_ts.isoformat() if r.end_ts else None,
+                        status=str(r.status),
                     )
                 )
 
