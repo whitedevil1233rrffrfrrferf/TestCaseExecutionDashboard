@@ -153,7 +153,7 @@ const RunDetails: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* ===== SUMMARY ===== */}
+      {/* Header Section */}
       <div className={styles.summaryCard}>
         <div className={styles.headerRow}>
           <h1 className={styles.title}>
@@ -161,7 +161,7 @@ const RunDetails: React.FC = () => {
           </h1>
           {planName && (
             <div className={styles.planBadge}>
-              <i className="bi-journal-text me-2"></i>
+              <i className="bi-journal-text"></i>
               {planName}
             </div>
           )}
@@ -181,7 +181,7 @@ const RunDetails: React.FC = () => {
           <DetailCard
             label="Status"
             value={summary.status}
-            status={statusMap(summary.status)} // only Status card
+            status={statusMap(summary.status)}
             icon="bi-activity"
           />
           <DetailCard
@@ -191,26 +191,27 @@ const RunDetails: React.FC = () => {
           />
           <DetailCard
             label="Ended At"
-            value={
-              summary.end_ts ? new Date(summary.end_ts).toLocaleString() : "-"
-            }
-            icon="bi-calendar-event"
+            value={summary.end_ts ? new Date(summary.end_ts).toLocaleString() : "-"}
+            icon="bi-calendar-check"
           />
           <DetailCard
             label="Duration"
             value={durationSeconds !== null ? `${durationSeconds}s` : "-"}
             icon="bi-clock"
           />
+        </div>
       </div>
-      </div>
-      <RunTimeline runName={summary.run_name} hoveredMetric={hoveredMetric}/>       
-      {/* ===== FILTERS ===== */}
+
+      {/* Timeline Section */}
+      <RunTimeline runName={summary.run_name} hoveredMetric={hoveredMetric} />
+
+      {/* Filters Section */}
       <div className={styles.filtersContainer}>
         <div className={styles.filtersCard}>
-          <div className={styles.filtersTitle}>
-            <i className="bi-funnel me-2"></i>
+          <h2 className={styles.filtersTitle}>
+            <i className="bi-funnel"></i>
             Filter Results
-          </div>
+          </h2>
           <RunDetailsFilters
             metrics={filtersData.metrics}
             statuses={filtersData.statuses}
@@ -220,30 +221,32 @@ const RunDetails: React.FC = () => {
           />
         </div>
       </div>
-      {/* ===== DETAILS TABLE ===== */}
-      <div className="table-responsive table-container">
-        <table className="table table-hover table-bordered align-middle mb-0">
-          <thead className="table-light">
-            <tr>
-              
-              <th>Testcase</th>
-              <th>Metric</th>
-              <th>Score</th>
-              <th>Status</th>
-            </tr>
-          </thead>
 
-          <tbody>
-            {details.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-4 text-muted">
-                  No test case details found
-                </td>
-              </tr>
-            ) : (
-              details.map((d) => (
-                <tr
-                  key={d.detail_id}
+      {/* Table Section */}
+      <section className={styles.tableSection}>
+        
+        <div className={styles.tableContainer}>
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th>Test Case</th>
+                  <th>Metric</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {details.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-4 text-muted">
+                      No test case details found
+                    </td>
+                  </tr>
+                ) : (
+                  details.map((d) => (
+                    <tr
+                      key={d.detail_id}
                   role="button"
                   className="cursor-pointer"
                   data-bs-toggle="modal"
@@ -251,35 +254,34 @@ const RunDetails: React.FC = () => {
                   onClick={() =>
                     setSelectedConversationId(Number(d.conversation_id))
                   }
-                  onMouseEnter={() => setHoveredMetric(d.metric_name)}
-                  onMouseLeave={() => setHoveredMetric(null)}
-                >
-                  
-                  <td>{d.testcase_name}</td>
-                  <td>{d.metric_name}</td>
-                  <td>{d.score === null ? "-" : d.score}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        d.status === "PASSED"
-                          ? "bg-success"
-                          : d.status === "FAILED"
-                          ? "bg-danger"
-                          : "bg-secondary"
-                      }`}
-                    >
-                      {d.status}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                      onMouseEnter={() => setHoveredMetric(d.metric_name)}
+                      onMouseLeave={() => setHoveredMetric(null)}
 
-      <Modal conversationId={selectedConversationId} />    
-        
+                    >
+                      <td className="font-medium text-gray-900">{d.testcase_name}</td>
+                      <td className="text-gray-700">{d.metric_name}</td>
+                      <td className="font-medium text-gray-900">{d.score === null ? "-" : d.score}</td>
+                      <td>
+                        <span className={`${styles.statusCell} ${
+                          d.status === "Completed"
+                            ? styles.statusCompleted
+                            : d.status === "FAILED"
+                            ? styles.statusFailed
+                            : styles.statusRunning
+                        }`}>
+                          {d.status.toLowerCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <Modal conversationId={selectedConversationId} />
     </div>
   );
 };

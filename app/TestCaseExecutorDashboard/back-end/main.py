@@ -11,6 +11,7 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import sys
+from collections import defaultdict
 from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse,ConversationResponse,TestCaseResponse,FullConversationResponse, TimelineEvent
 load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
@@ -277,65 +278,161 @@ def get_run_evaluation_summary(run_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# @app.get("/test-runs/{run_name}/evaluation-report")
+# def download_evaluation_report(run_name: str):
+#     try:
+#         db = DB(db_url=db_url, debug=False)
+
+#         # -------- Run summary --------
+#         run = db.get_run_by_name(run_name)
+#         if not run:
+#             raise HTTPException(status_code=404, detail="Run not found")
+
+#         domain_name = None
+#         if getattr(run, "target_id", None):
+#             target = db.get_target_by_id(run.target_id)
+#             if target:
+#                 domain_name = getattr(target, "target_domain", None)
+
+#         # -------- Get details --------
+#         details = db.get_all_run_details_by_run_name(run_name)
+
+#         # -------- Create Excel --------
+#         wb = Workbook()
+#         ws = wb.active
+#         ws.title = "Evaluation Report"
+
+#         # -------- Run summary section --------
+#         ws.append(["Run Name", run.run_name])
+#         ws.append(["Target", run.target])
+#         ws.append(["Domain", domain_name])
+#         ws.append(["Status", run.status])
+#         ws.append(["Start Time", run.start_ts])
+#         ws.append(["End Time", run.end_ts])
+#         ws.append([])  # empty row
+
+#         # -------- Table header --------
+#         ws.append([
+#             "Detail ID",
+#             "Testcase",
+#             "Agent Response",
+#             "Evaluation Score",
+#             "Evaluation Reason",
+#             "Evaluation Time"
+#         ])
+
+#         # -------- Rows --------
+#         for d in details:
+#             conv = db.get_conversation_by_id(d.conversation_id)
+#             if not conv:
+#                 continue
+
+#             ws.append([
+#                 d.detail_id,
+#                 conv.testcase,
+#                 conv.agent_response,
+#                 conv.evaluation_score,
+#                 conv.evaluation_reason,
+#                 conv.evaluation_ts
+#             ])
+
+#         # -------- Save temp file --------
+#         tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+#         wb.save(tmp_file.name)
+#         tmp_file.close()
+
+#         return FileResponse(
+#             path=tmp_file.name,
+#             filename=f"{run_name}_evaluation_report.xlsx",
+#             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#         )
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))     
+
 @app.get("/test-runs/{run_name}/evaluation-report")
 def download_evaluation_report(run_name: str):
     try:
         db = DB(db_url=db_url, debug=False)
 
-        # -------- Run summary --------
+        # -------------------------------------------------
+        # FETCH RUN
+        # -------------------------------------------------
         run = db.get_run_by_name(run_name)
         if not run:
             raise HTTPException(status_code=404, detail="Run not found")
 
-        domain_name = None
-        if getattr(run, "target_id", None):
-            target = db.get_target_by_id(run.target_id)
-            if target:
-                domain_name = getattr(target, "target_domain", None)
-
-        # -------- Get details --------
         details = db.get_all_run_details_by_run_name(run_name)
+        plan_name = details[0].plan_name if details else None
+        # Cache conversations
+        conversation_cache = {}
 
-        # -------- Create Excel --------
+        for d in details:
+            if d.conversation_id not in conversation_cache:
+                conversation_cache[d.conversation_id] = db.get_conversation_by_id(
+                    d.conversation_id
+                )
+
         wb = Workbook()
-        ws = wb.active
-        ws.title = "Evaluation Report"
 
-        # -------- Run summary section --------
-        ws.append(["Run Name", run.run_name])
-        ws.append(["Target", run.target])
-        ws.append(["Domain", domain_name])
-        ws.append(["Status", run.status])
-        ws.append(["Start Time", run.start_ts])
-        ws.append(["End Time", run.end_ts])
-        ws.append([])  # empty row
+        # =================================================
+        # SHEET 1 : RUN SUMMARY (NO BS)
+        # =================================================
+        ws_summary = wb.active
+        ws_summary.title = "Run_Summary"
 
-        # -------- Table header --------
-        ws.append([
+        # Collect counts
+        testcases = set()
+        total_metrics = len(details)
+
+        for conv in conversation_cache.values():
+            if conv and getattr(conv, "testcase", None):
+                testcases.add(conv.testcase)
+
+        ws_summary.append(["Run Name", run.run_name])
+        ws_summary.append(["Plan Name", plan_name])
+        ws_summary.append(["Status", run.status])
+        ws_summary.append(["Total Testcases", len(testcases)])
+        ws_summary.append(["Total Metrics", total_metrics])
+
+        # =================================================
+        # SHEET 2 : EVALUATION DETAILS (TESTCASE + METRIC)
+        # =================================================
+        ws_details = wb.create_sheet(title="Evaluation_Details")
+
+        ws_details.append([
             "Detail ID",
             "Testcase",
-            "Agent Response",
+            "Metric",
             "Evaluation Score",
             "Evaluation Reason",
             "Evaluation Time"
         ])
 
-        # -------- Rows --------
         for d in details:
-            conv = db.get_conversation_by_id(d.conversation_id)
+            conv = conversation_cache.get(d.conversation_id)
             if not conv:
                 continue
 
-            ws.append([
+            metric_name = (
+                getattr(d, "metric", None)
+                or getattr(d, "metric_name", None)
+                or getattr(conv, "metric", None)
+                or getattr(conv, "metric_name", None)
+            )
+
+            ws_details.append([
                 d.detail_id,
-                conv.testcase,
-                conv.agent_response,
-                conv.evaluation_score,
-                conv.evaluation_reason,
-                conv.evaluation_ts
+                getattr(conv, "testcase", None),
+                metric_name,
+                getattr(conv, "evaluation_score", None),
+                getattr(conv, "evaluation_reason", None),
+                getattr(conv, "evaluation_ts", None),
             ])
 
-        # -------- Save temp file --------
+        # =================================================
+        # SAVE FILE
+        # =================================================
         tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
         wb.save(tmp_file.name)
         tmp_file.close()
@@ -347,10 +444,7 @@ def download_evaluation_report(run_name: str):
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))     
-
-
-
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get(
     "/testcases/{testcase_name}",
     response_model=TestCaseResponse
@@ -419,13 +513,7 @@ def get_test_run_timeline(run_name: str):
 
     return timeline
 
-@app.get("/test")
-def test():
-    
 
-    return "timeline"
-
-##test
 
 if __name__ == "__main__":
     

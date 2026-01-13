@@ -42,13 +42,13 @@ const Filters: React.FC<FiltersProps> = ({ onFilterChange }) => {
         onChange={onFilterChange}
       />
 
-      <FilterSelect
+      {/* <FilterSelect
         placeholder="Language"
         filterType="language"
         options={filters.languages}
         isLoading={isLoading}
         onChange={onFilterChange}
-      />
+      /> */}
 
       <FilterSelect
         placeholder="Target"
