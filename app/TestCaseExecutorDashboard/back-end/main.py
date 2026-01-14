@@ -366,7 +366,7 @@ def download_evaluation_report(run_name: str):
         plan_name = details[0].plan_name if details else None
         # Cache conversations
         conversation_cache = {}
-
+        testcase_prompt_cache = {}
         for d in details:
             if d.conversation_id not in conversation_cache:
                 conversation_cache[d.conversation_id] = db.get_conversation_by_id(
@@ -406,7 +406,10 @@ def download_evaluation_report(run_name: str):
             "Metric",
             "Evaluation Score",
             "Evaluation Reason",
-            "Evaluation Time"
+            "Evaluation Time",
+            "Agent Response",
+            "User Prompt",
+            "System Prompt"
         ])
 
         for d in details:
@@ -420,7 +423,21 @@ def download_evaluation_report(run_name: str):
                 or getattr(conv, "metric", None)
                 or getattr(conv, "metric_name", None)
             )
+            testcase_name = getattr(conv, "testcase", None)
+            if testcase_name not in testcase_prompt_cache:
+                testcase = db.get_testcase_by_name(testcase_name)
 
+                if not testcase or not getattr(testcase, "prompt", None):
+                    testcase_prompt_cache[testcase_name] = {
+                        "user_prompt": None,
+                        "system_prompt": None,
+                    }
+                else:
+                    testcase_prompt_cache[testcase_name] = {
+                        "user_prompt": getattr(testcase.prompt, "user_prompt", None),
+                        "system_prompt": getattr(testcase.prompt, "system_prompt", None),
+                    }
+            prompts = testcase_prompt_cache[testcase_name]        
             ws_details.append([
                 d.detail_id,
                 getattr(conv, "testcase", None),
@@ -428,6 +445,9 @@ def download_evaluation_report(run_name: str):
                 getattr(conv, "evaluation_score", None),
                 getattr(conv, "evaluation_reason", None),
                 getattr(conv, "evaluation_ts", None),
+                getattr(conv, "agent_response", None),
+                prompts["user_prompt"],
+                prompts["system_prompt"],
             ])
 
         # =================================================

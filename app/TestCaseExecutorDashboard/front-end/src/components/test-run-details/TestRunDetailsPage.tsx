@@ -233,6 +233,7 @@ const RunDetails: React.FC = () => {
                   <th>Test Case</th>
                   <th>Metric</th>
                   <th>Score</th>
+                  <th>Plan</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -261,6 +262,7 @@ const RunDetails: React.FC = () => {
                       <td className="font-medium text-gray-900">{d.testcase_name}</td>
                       <td className="text-gray-700">{d.metric_name}</td>
                       <td className="font-medium text-gray-900">{d.score === null ? "-" : d.score}</td>
+                      <td className="font-medium text-gray-900">{d.plan_name}</td>
                       <td>
                         <span className={`${styles.statusCell} ${
                           d.status === "Completed"
