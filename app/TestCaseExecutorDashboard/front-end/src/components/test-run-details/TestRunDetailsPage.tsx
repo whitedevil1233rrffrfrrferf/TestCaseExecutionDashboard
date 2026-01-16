@@ -148,8 +148,16 @@ const RunDetails: React.FC = () => {
      UI
   ====================== */
 
-  // Get the plan name from the first detail (since all are the same)
-  const planName = details[0]?.plan_name;
+  // Group details by plan name
+  const groupedByPlan = details.reduce((acc, detail) => {
+    if (!acc[detail.plan_name]) {
+      acc[detail.plan_name] = [];
+    }
+    acc[detail.plan_name].push(detail);
+    return acc;
+  }, {} as Record<string, RunDetail[]>);
+  
+  const planNames = Object.keys(groupedByPlan);
 
   return (
     <div className={styles.container}>
@@ -159,12 +167,12 @@ const RunDetails: React.FC = () => {
           <h1 className={styles.title}>
             {summary.run_name}
           </h1>
-          {planName && (
+          {/* {planNames.length > 0 && (
             <div className={styles.planBadge}>
               <i className="bi-journal-text"></i>
-              {planName}
+              {planNames.length === 1 ? planNames[0] : `${planNames.length} Plans`}
             </div>
-          )}
+          )} */}
         </div>
 
         <div className={styles.detailsGrid}>
@@ -224,58 +232,69 @@ const RunDetails: React.FC = () => {
 
       {/* Table Section */}
       <section className={styles.tableSection}>
-        
         <div className={styles.tableContainer}>
           <div className="table-responsive">
             <table className="table table-bordered table-hover">
               <thead>
                 <tr>
+                  <th style={{ width: '20%' }}>Plan Name</th>
                   <th>Test Case</th>
                   <th>Metric</th>
                   <th>Score</th>
-                  <th>Plan</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {details.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-4 text-muted">
+                    <td colSpan={5} className="text-center py-4 text-muted">
                       No test case details found
                     </td>
                   </tr>
                 ) : (
-                  details.map((d) => (
-                    <tr
-                      key={d.detail_id}
-                  role="button"
-                  className="cursor-pointer"
-                  data-bs-toggle="modal"
-                  data-bs-target="#conversationModal"
-                  onClick={() =>
-                    setSelectedConversationId(Number(d.conversation_id))
-                  }
-                      onMouseEnter={() => setHoveredMetric(d.metric_name)}
-                      onMouseLeave={() => setHoveredMetric(null)}
-
-                    >
-                      <td className="font-medium text-gray-900">{d.testcase_name}</td>
-                      <td className="text-gray-700">{d.metric_name}</td>
-                      <td className="font-medium text-gray-900">{d.score === null ? "-" : d.score}</td>
-                      <td className="font-medium text-gray-900">{d.plan_name}</td>
-                      <td>
-                        <span className={`${styles.statusCell} ${
-                          d.status === "Completed"
-                            ? styles.statusCompleted
-                            : d.status === "FAILED"
-                            ? styles.statusFailed
-                            : styles.statusRunning
-                        }`}>
-                          {d.status.toLowerCase()}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  Object.entries(groupedByPlan).flatMap(([planName, planDetails]) => 
+                    planDetails.map((d, index) => (
+                      <tr
+                        key={d.detail_id}
+                        role="button"
+                        className="cursor-pointer"
+                        data-bs-toggle="modal"
+                        data-bs-target="#conversationModal"
+                        onClick={() => setSelectedConversationId(Number(d.conversation_id))}
+                        onMouseEnter={() => setHoveredMetric(d.metric_name)}
+                        onMouseLeave={() => setHoveredMetric(null)}
+                      >
+                        {index === 0 ? (
+                          <td 
+                            rowSpan={planDetails.length} 
+                            className="align-middle text-center"
+                            style={{
+                              backgroundColor: '#f8fafc',
+                              fontWeight: 500,
+                              borderRight: '1px solid #e2e8f0',
+                              minWidth: '200px'
+                            }}
+                          >
+                            {planName}
+                          </td>
+                        ) : null}
+                        <td className="font-medium text-gray-900">{d.testcase_name}</td>
+                        <td className="text-gray-700">{d.metric_name}</td>
+                        <td className="font-medium text-gray-900">{d.score === null ? "-" : d.score}</td>
+                        <td>
+                          <span className={`${styles.statusCell} ${
+                            d.status === "Completed"
+                              ? styles.statusCompleted
+                              : d.status === "FAILED"
+                              ? styles.statusFailed
+                              : styles.statusRunning
+                          }`}>
+                            {d.status.toLowerCase()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )
                 )}
               </tbody>
             </table>

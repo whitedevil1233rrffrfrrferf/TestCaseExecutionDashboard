@@ -171,6 +171,46 @@
 }
 
 /* ======================
+   PLAN SECTION STYLING
+====================== */
+.planSection {
+  display: flex;
+  margin-bottom: 2rem;
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.planNameContainer {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  min-width: 50px;
+  width: 50px;
+  position: relative;
+}
+
+.planName {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 100%;
+  font-weight: 600;
+  color: #1e40af;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* ======================
    TABLE STYLING
 ====================== */
 .contentWrapper {
@@ -181,16 +221,20 @@
 
 .tableSection {
   margin: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .tableContainer {
   overflow-x: auto;
   background-color: white;
-  padding: 20px;
+  padding: 1.25rem;
   margin: 0;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  flex: 1;
   -webkit-overflow-scrolling: touch;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Custom table styling */
