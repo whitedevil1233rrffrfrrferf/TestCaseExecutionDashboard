@@ -530,7 +530,7 @@ def get_test_run_timeline(run_name: str):
     timeline = db.get_run_timeline(run_name)
     if not timeline:
         raise HTTPException(status_code=404, detail="No timeline found")
-
+    
     return timeline
 
 

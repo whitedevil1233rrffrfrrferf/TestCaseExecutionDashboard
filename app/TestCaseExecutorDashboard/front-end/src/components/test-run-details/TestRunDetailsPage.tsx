@@ -58,6 +58,7 @@ const RunDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
+  const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
    const [filtersData, setFiltersData] = useState<AllFilters>({
     metrics: [],
     statuses: [],
@@ -211,7 +212,12 @@ const RunDetails: React.FC = () => {
       </div>
 
       {/* Timeline Section */}
-      <RunTimeline runName={summary.run_name} hoveredMetric={hoveredMetric} />
+      <RunTimeline 
+        runName={summary.run_name} 
+        hoveredMetric={hoveredMetric}
+        hoveredPlan={hoveredPlan}
+        onHoverPlan={setHoveredPlan}
+      />
 
       {/* Filters Section */}
       <div className={styles.filtersContainer}>
@@ -261,15 +267,23 @@ const RunDetails: React.FC = () => {
                         data-bs-toggle="modal"
                         data-bs-target="#conversationModal"
                         onClick={() => setSelectedConversationId(Number(d.conversation_id))}
-                        onMouseEnter={() => setHoveredMetric(d.metric_name)}
-                        onMouseLeave={() => setHoveredMetric(null)}
-                      >
+                        onMouseEnter={() => {
+                            setHoveredMetric(d.metric_name);
+                            setHoveredPlan(planName);
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredMetric(null);
+                            setHoveredPlan(null);
+                          }}
+                        >
                         {index === 0 ? (
                           <td 
                             rowSpan={planDetails.length} 
                             className="align-middle text-center"
                             style={{
-                              backgroundColor: '#f8fafc',
+                              backgroundColor:
+                              hoveredPlan === planName ? 'rgba(0, 0, 0, 0.099)' : 'transparent',
+                              
                               fontWeight: 500,
                               borderRight: '1px solid #e2e8f0',
                               minWidth: '200px'

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import styles from "./runtimeline.module.css";
 
-/* ===== TYPE ===== */
+/* ===== TYPES ===== */
 
 interface TimelineEvent {
   conversation_id: number;
   metric_name: string;
+  plan_name: string;
   prompt_ts: string | null;
   response_ts: string | null;
 }
@@ -13,105 +14,135 @@ interface TimelineEvent {
 interface Props {
   runName: string;
   hoveredMetric: string | null;
+  hoveredPlan: string | null;
+  onHoverPlan: (planName: string | null) => void;
 }
-
-/* ===== COLORS ===== */
-function getRandomColor() {
-  // Generate bright, saturated colors
-  const hue = Math.floor(Math.random() * 360); // 0–360°
-  const saturation = 70 + Math.random() * 30;  // 70–100%
-  const lightness = 50 + Math.random() * 20;   // 50–70%
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-}
-
 
 /* ===== COMPONENT ===== */
 
-const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric }) => {
+const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onHoverPlan }) => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
 
   useEffect(() => {
     fetch(`http://localhost:8000/test-runs/${runName}/timeline`)
-      .then((res) => res.json())
+      .then(res => res.json())
       .then(setEvents);
   }, [runName]);
 
   if (events.length === 0) return null;
 
-  /* 🧮 TIME MATH */
+  // Filter events to show only the hovered plan or all plans if none is hovered
+  const filteredEvents = hoveredPlan 
+    ? events.filter(e => e.plan_name === hoveredPlan)
+    : events;
 
-  const start = Math.min(
-    ...events.map(e => new Date(e.prompt_ts!).getTime())
+  // Group by plan and sort events by prompt time
+  const eventsByPlan = filteredEvents.reduce<Record<string, TimelineEvent[]>>(
+    (acc, e) => {
+      acc[e.plan_name] ||= [];
+      acc[e.plan_name].push(e);
+      return acc;
+    },
+    {}
   );
 
-  const end = Math.max(
-    ...events.map(e => new Date(e.response_ts!).getTime())
+  // Sort events within each plan by prompt time
+  Object.values(eventsByPlan).forEach(planEvents =>
+    planEvents.sort(
+      (a, b) =>
+        new Date(a.prompt_ts!).getTime() -
+        new Date(b.prompt_ts!).getTime()
+    )
   );
 
-  const total = end - start;
+  const planNames = Object.keys(eventsByPlan);
+  if (planNames.length === 0) return null;
 
-  const MARKERS = 5;
-
-  const totalSeconds = Math.ceil(total / 1000);
-
-    const timestamps = [
-    start, // timeline start
-    ...events.map(e => new Date(e.response_ts!).getTime()), // each block end
-    end // timeline end
-    ];
-    const uniqueTimestamps = Array.from(new Set(timestamps)).sort((a, b) => a - b);
-
-    const timeMarkers = uniqueTimestamps.map(ts => Math.floor((ts - start)/1000));
-    const uniqueMetrics = Array.from(new Set(events.map(e => e.metric_name)));
-
-    // Assign a random color to each metric
-    const METRIC_COLORS: Record<string, string> = {};
-    uniqueMetrics.forEach(metric => {
-    METRIC_COLORS[metric] = getRandomColor();
-    });
   return (
     <div className={styles.timelineCard}>
       <div className={styles.timelineHeader}>
-        <h3>Execution Timeline</h3>
+        <h3>Execution Timeline{hoveredPlan ? `: ${hoveredPlan}` : ''}</h3>
         <span className={styles.timelineHint}>
-          Hover a metric row to highlight execution
+          {hoveredPlan ? 'Hover a metric row to highlight execution' : 'Hover over a plan in the table to view its timeline'}
         </span>
       </div>
+      {/* HEADER */}
 
-      <div className={styles.wrapper}>
-        <div className={styles.timeline}>
-          {events.map((e) => {
-            const left = ((new Date(e.prompt_ts!).getTime() - start) / total) * 100;
-            const width = ((new Date(e.response_ts!).getTime() - new Date(e.prompt_ts!).getTime()) / total) * 100;
+      {/* HORIZONTAL ROW (SCROLLS, STICKY SAFE) */}
+      <div className={styles.planRow}>
+        {planNames.map((plan, index) => {
+          const planEvents = eventsByPlan[plan];
 
-            return (
-              <div
-                key={e.conversation_id}
-                className={styles.block}
-                style={{
-                  left: `${left}%`,
-                  width: `${width}%`,
-                  opacity: hoveredMetric === null ? 0.3 : hoveredMetric === e.metric_name ? 1 : 0.3,
-                }}
-              />
-            );
-          })}
-        </div>
+          const start = Math.min(
+            ...planEvents.map(e => new Date(e.prompt_ts!).getTime())
+          );
+          const end = Math.max(
+            ...planEvents.map(e => new Date(e.response_ts!).getTime())
+          );
+          const total = end - start || 1;
 
-        <div className={styles.scale}>
-          {uniqueTimestamps.map((ts, i) => (
-            <div
-              key={i}
-              className={styles.scaleItem}
-              style={{ left: `${((ts - start) / total) * 100}%` }}
-            >
-              {Math.round((ts - start) / 1000)}s
-            </div>
-          ))}
-        </div>
-  </div>
-</div>
-);
+          return (
+            <React.Fragment key={plan}>
+              {/* PLAN BLOCK */}
+              <div className={styles.planBlock}>
+                <div className={styles.planHeader}>{plan}</div>
+
+                {/* TIMELINE */}
+                <div className={styles.timeline}>
+                  {planEvents.map(e => {
+                    const prompt = new Date(e.prompt_ts!).getTime();
+                    const response = new Date(e.response_ts!).getTime();
+
+                    const left = ((prompt - start) / total) * 100;
+                    const width = ((response - prompt) / total) * 100;
+
+                    return (
+                      <div
+                        key={e.conversation_id}
+                        className={styles.block}
+                        style={{
+                          left: `${left}%`,
+                          width: `${width}%`,
+                          opacity:
+                            hoveredMetric === null
+                              ? 0.3
+                              : hoveredMetric === e.metric_name
+                              ? 1
+                              : 0.25,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* SCALE */}
+                <div className={styles.scale}>
+                  {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
+                    <div
+                      key={i}
+                      className={styles.scaleItem}
+                      style={{ left: `${p * 100}%` }}
+                    >
+                      {Math.round((total * p) / 1000)}s
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* DOTTED GAP */}
+              {index < planNames.length - 1 && (
+                <div className={styles.planConnector}>
+                  <span className={styles.gapLabel}>
+                    Gap between test plans
+                  </span>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 export default RunTimeline;
