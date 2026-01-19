@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import styles from "./runtimeline.module.css";
 
 /* ===== TYPES ===== */
@@ -14,13 +14,13 @@ interface TimelineEvent {
 interface Props {
   runName: string;
   hoveredMetric: string | null;
-  hoveredPlan: string | null;
-  onHoverPlan: (planName: string | null) => void;
+  hoveredPlan?: string | null;        // Make optional with ?
+  onHoverPlan?: (plan: string | null) => void;  // Make optional with ?
 }
 
 /* ===== COMPONENT ===== */
 
-const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onHoverPlan }) => {
+const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric }) => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
 
   useEffect(() => {
@@ -31,10 +31,8 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onH
 
   if (events.length === 0) return null;
 
-  // Filter events to show only the hovered plan or all plans if none is hovered
-  const filteredEvents = hoveredPlan 
-    ? events.filter(e => e.plan_name === hoveredPlan)
-    : events;
+  // Always show all plans
+  const filteredEvents = events;
 
   // Group by plan and sort events by prompt time
   const eventsByPlan = filteredEvents.reduce<Record<string, TimelineEvent[]>>(
@@ -58,13 +56,30 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onH
   const planNames = Object.keys(eventsByPlan);
   if (planNames.length === 0) return null;
 
+  // Calculate time gaps between plans
+  const planGaps = planNames.slice(0, -1).map((plan, i) => {
+    const currentPlan = eventsByPlan[plan];
+    const nextPlan = eventsByPlan[planNames[i + 1]];
+    
+    if (!currentPlan.length || !nextPlan.length) return 0;
+    
+    const lastEventOfCurrent = currentPlan.reduce((latest, event) => {
+      const time = new Date(event.response_ts!).getTime();
+      return time > latest ? time : latest;
+    }, 0);
+    
+    const firstEventOfNext = nextPlan.reduce((earliest, event) => {
+      const time = new Date(event.prompt_ts!).getTime();
+      return time < earliest ? time : earliest;
+    }, Infinity);
+    
+    return firstEventOfNext - lastEventOfCurrent;
+  });
+
   return (
     <div className={styles.timelineCard}>
       <div className={styles.timelineHeader}>
-        <h3>Execution Timeline{hoveredPlan ? `: ${hoveredPlan}` : ''}</h3>
-        <span className={styles.timelineHint}>
-          {hoveredPlan ? 'Hover a metric row to highlight execution' : 'Hover over a plan in the table to view its timeline'}
-        </span>
+        <h3>Execution Timeline</h3>
       </div>
       {/* HEADER */}
 
@@ -85,7 +100,12 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onH
             <React.Fragment key={plan}>
               {/* PLAN BLOCK */}
               <div className={styles.planBlock}>
-                <div className={styles.planHeader}>{plan}</div>
+                <div className={styles.planHeader}>
+                  {plan}
+                  <div className={styles.duration}>
+                    {formatDuration(total)}
+                  </div>
+                </div>
 
                 {/* TIMELINE */}
                 <div className={styles.timeline}>
@@ -132,8 +152,11 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onH
               {/* DOTTED GAP */}
               {index < planNames.length - 1 && (
                 <div className={styles.planConnector}>
-                  <span className={styles.gapLabel}>
-                    Gap between test plans
+                  <span 
+                    className={styles.gapLabel}
+                    data-tooltip={`${(planGaps[index] / 1000).toFixed(2)}s gap`}
+                  >
+                    {formatTimeGap(planGaps[index])}
                   </span>
                 </div>
               )}
@@ -144,5 +167,32 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, hoveredPlan, onH
     </div>
   );
 };
+
+// Helper function to format duration in a human-readable way
+function formatDuration(ms: number): string {
+  const seconds = Math.floor(ms / 1000);
+  
+  if (seconds < 1) return '<1s';
+  if (seconds < 60) return `${seconds}s`;
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  
+  if (minutes < 60) {
+    return remainingSeconds > 0 
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  return remainingMinutes > 0
+    ? `${hours}h ${remainingMinutes}m`
+    : `${hours}h`;
+}
+
+// Alias for backward compatibility
+const formatTimeGap = formatDuration;
 
 export default RunTimeline;
