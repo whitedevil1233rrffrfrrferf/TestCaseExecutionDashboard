@@ -150,7 +150,13 @@
 .filtersContainer {
   margin: 2rem 0;
 }
+.metricRowHover td {
+  background-color: rgba(0, 0, 0, 0.099);
+}
 
+.metricRowHover .planCell {
+  background-color: transparent !important;
+}
 .filtersCard {
   background: white;
   border-radius: 12px;
@@ -169,6 +175,11 @@
   align-items: center;
   gap: 0.5rem;
 }
+/* NEVER highlight the plan column */
+/* /* .metricRowHover .planCell {
+  background-color: transparent !important;
+}  
+
 
 /* ======================
    PLAN SECTION STYLING

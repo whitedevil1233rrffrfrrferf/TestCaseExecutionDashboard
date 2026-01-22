@@ -11,12 +11,16 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import sys
+import randomname
 from collections import defaultdict
-from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse,ConversationResponse,TestCaseResponse,FullConversationResponse, TimelineEvent
+from schemas import TestRunResponse,TestRunDetailsResponse,FilterResponse,AllFiltersResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse,ConversationResponse,TestCaseResponse,FullConversationResponse, TimelineEvent,NewTestRun
 load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+import datetime
+from datetime import datetime
+from lib.orm import DB,tables
 
-from lib.orm import DB
+from lib.orm.tables import Run
 
 # db_url = (
 #             f"mysql+mysqlconnector://"
@@ -31,7 +35,7 @@ db_file = "AIEvaluationData.db"
 
 # Resolve project root (this file → importer → app → src → project_root)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-
+print(project_root)
 
 # Place DB inside project_root/data
 db_folder = os.path.join(project_root, "data")
@@ -43,6 +47,7 @@ db_path = os.path.join(db_folder, db_file)
 # SQLite requires a file URL
 db_url = f"sqlite:///{db_path}"
 
+db = DB(db_url=db_url, debug=False)
 
 app = FastAPI()
 
@@ -53,6 +58,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get(
     "/get_all_test_runs",
@@ -107,7 +113,7 @@ def get_test_run(
     status: Optional[str] = Query(None),
     ):
     try:
-        db = DB(db_url=db_url, debug=False)
+        
         print(metric, status)
         # ---------- RUN SUMMARY ----------
         run = db.get_run_by_name(run_name)
@@ -175,7 +181,7 @@ def get_test_run(
 @app.get("/get_all_filters", response_model=AllFiltersResponse)
 def get_all_filters():
     try:
-        db = DB(db_url=db_url, debug=False)  # your DB instance
+        
 
         # Use the @property methods to get all data
         return AllFiltersResponse(
@@ -196,7 +202,7 @@ def get_all_filters():
 @app.get("/test-runs/{run_name}/summary", response_model=TestRunSummaryResponse)
 def get_test_run_summary(run_name: str):
     try:
-        db = DB(db_url=db_url, debug=False)
+        
 
         run = db.get_run_by_name(run_name)
         if not run:
@@ -230,7 +236,7 @@ def get_test_run_summary(run_name: str):
 )
 def get_run_evaluation_summary(run_name: str):
     try:
-        db = DB(db_url=db_url, debug=False)
+       
         run= db.get_run_by_name(run_name)
         if not run:
             raise HTTPException(status_code=404, detail="Run not found")
@@ -276,84 +282,12 @@ def get_run_evaluation_summary(run_name: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# @app.get("/test-runs/{run_name}/evaluation-report")
-# def download_evaluation_report(run_name: str):
-#     try:
-#         db = DB(db_url=db_url, debug=False)
-
-#         # -------- Run summary --------
-#         run = db.get_run_by_name(run_name)
-#         if not run:
-#             raise HTTPException(status_code=404, detail="Run not found")
-
-#         domain_name = None
-#         if getattr(run, "target_id", None):
-#             target = db.get_target_by_id(run.target_id)
-#             if target:
-#                 domain_name = getattr(target, "target_domain", None)
-
-#         # -------- Get details --------
-#         details = db.get_all_run_details_by_run_name(run_name)
-
-#         # -------- Create Excel --------
-#         wb = Workbook()
-#         ws = wb.active
-#         ws.title = "Evaluation Report"
-
-#         # -------- Run summary section --------
-#         ws.append(["Run Name", run.run_name])
-#         ws.append(["Target", run.target])
-#         ws.append(["Domain", domain_name])
-#         ws.append(["Status", run.status])
-#         ws.append(["Start Time", run.start_ts])
-#         ws.append(["End Time", run.end_ts])
-#         ws.append([])  # empty row
-
-#         # -------- Table header --------
-#         ws.append([
-#             "Detail ID",
-#             "Testcase",
-#             "Agent Response",
-#             "Evaluation Score",
-#             "Evaluation Reason",
-#             "Evaluation Time"
-#         ])
-
-#         # -------- Rows --------
-#         for d in details:
-#             conv = db.get_conversation_by_id(d.conversation_id)
-#             if not conv:
-#                 continue
-
-#             ws.append([
-#                 d.detail_id,
-#                 conv.testcase,
-#                 conv.agent_response,
-#                 conv.evaluation_score,
-#                 conv.evaluation_reason,
-#                 conv.evaluation_ts
-#             ])
-
-#         # -------- Save temp file --------
-#         tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-#         wb.save(tmp_file.name)
-#         tmp_file.close()
-
-#         return FileResponse(
-#             path=tmp_file.name,
-#             filename=f"{run_name}_evaluation_report.xlsx",
-#             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-#         )
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))     
+   
 
 @app.get("/test-runs/{run_name}/evaluation-report")
 def download_evaluation_report(run_name: str):
     try:
-        db = DB(db_url=db_url, debug=False)
+        
 
         # -------------------------------------------------
         # FETCH RUN
@@ -465,12 +399,13 @@ def download_evaluation_report(run_name: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
 @app.get(
     "/testcases/{testcase_name}",
     response_model=TestCaseResponse
 )
 def get_conversation(testcase_name: str):
-    db = DB(db_url=db_url, debug=False)
+    
     testcase = db.get_testcase_by_name(testcase_name)
     if not testcase:
         raise HTTPException(status_code=404, detail="Testcase not found")
@@ -484,7 +419,7 @@ def get_conversation(testcase_name: str):
     response_model=FullConversationResponse
 )
 def get_full_conversation(conversation_id: int):
-    db = DB(db_url=db_url, debug=False)
+    
     conversation = db.get_conversation_by_id(conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -512,7 +447,7 @@ def get_full_conversation(conversation_id: int):
 
 @app.get("/conversations/{conversation_id}/timeline")
 def get_conversation_timeline_api(conversation_id: int):
-    db = DB(db_url=db_url, debug=False)
+    
     timeline = db.get_conversation_timeline(conversation_id)
 
     if not timeline:
@@ -525,15 +460,35 @@ def get_conversation_timeline_api(conversation_id: int):
     response_model=list[TimelineEvent]
 )
 def get_test_run_timeline(run_name: str):
-    db = DB(db_url=db_url, debug=False)
-
+    
     timeline = db.get_run_timeline(run_name)
     if not timeline:
         raise HTTPException(status_code=404, detail="No timeline found")
     
     return timeline
 
+@app.post("/start-run")
+def start_run(data: NewTestRun):
+    if data.testPlanId:
+        ## Create a random name for the run
+        run_name = randomname.generate('v/*','adj/*','n/*','ip/*')
+        start_time = datetime.now().isoformat()
+        run = Run(target = target.target_name, run_name=run_name, start_ts=start_time)
+        run_id = db.add_or_update_testrun(run=run)
+        print(f"Starting run: {run_name} with ID: {run_id}")
+        plan_name = db.get_testplan_name(plan_id=data.testPlanId)
+        print(f"Starting run with Test Plan: {plan_name} (ID: {data.testPlanId})")
 
+
+    # print("Received data:")
+    # print("Target:", data.target)
+    # print("Test Plan:", data.testPlanId)
+    # print("Metric:", data.metric)
+    # print("Max Test Cases:", data.maxTestCases)
+    # print("Domain:", data.domain)
+    # print("Language:", data.language)
+
+    return {"status": "success"}
 
 if __name__ == "__main__":
     

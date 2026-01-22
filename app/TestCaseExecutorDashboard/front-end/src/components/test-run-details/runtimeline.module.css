@@ -122,12 +122,10 @@
 
 .planConnector {
   position: relative;
-  min-width: 60px;
+  min-width: 20px;  /* Reduced from 60px */
   height: 40px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  cursor: help;
 }
 
 .planConnector::before {
@@ -136,35 +134,31 @@
   top: 50%;
   left: 0;
   right: 0;
-  border-top: 2px dotted #cbd5e1;
+  border-top: 1px dotted #cbd5e1;  /* Thinner dotted line */
 }
 
-.gapLabel {
-  position: relative;
-  background: white;
-  padding: 2px 8px;
-  font-size: 11px;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  white-space: nowrap;
-  cursor: help;
-  z-index: 1;
-}
-
-.gapLabel:hover::after {
-  content: attr(data-tooltip);
+/* Tooltip that appears on hover */
+.planConnector::after {
+  content: attr(data-gap);
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1f2937;
+  visibility: hidden;
+  background-color: #1f2937;
   color: white;
+  text-align: center;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
-  margin-bottom: 5px;
   z-index: 10;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.planConnector:hover::after {
+  visibility: visible;
+  opacity: 1;
 }

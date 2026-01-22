@@ -4,8 +4,9 @@ import logo from './logo.svg';
 import './App.css';
 import TestRunsPage from './components/test-runs/TestRunsPage';
 import TestRunDetails from './components/test-run-details/TestRunDetailsPage';
-import NewTestRunPage from "./components/new-test-run/NewTestRunPage";
+
 import Navbar from "./components/common/Navbar";
+import NewTestRunPage from "./components/new-test-run/NewTestRunPage";
 
 
 function App() {

@@ -46,3 +46,11 @@ class EvaluationItemResponse(BaseModel):
 class RunEvaluationSummaryResponse(BaseModel):
     run: TestRunSummaryResponse
     evaluations: List[EvaluationItemResponse]
+
+class NewTestRun(BaseModel):
+    target: str
+    testPlanId: Optional[int] = None
+    metric: str
+    maxTestCases: str
+    domain: str
+    language: str

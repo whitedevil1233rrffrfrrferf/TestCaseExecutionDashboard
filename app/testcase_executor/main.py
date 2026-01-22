@@ -316,7 +316,7 @@ def main():
         # Print the table of evaluation metrics
         Console().print(table)
         return
-
+    
     if args.execute:
         # Logic to execute the test case or test plan
         if args.plan_id is None: # and args.testcase_id is None and args.metric_id is None:

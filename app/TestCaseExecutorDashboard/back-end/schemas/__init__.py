@@ -1,4 +1,4 @@
-from .testruns import TestRunResponse,TestRunDetailsResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse
+from .testruns import TestRunResponse,TestRunDetailsResponse,TestRunSummaryResponse,TestRunFullResponse,RunEvaluationSummaryResponse,EvaluationItemResponse,NewTestRun
 from .filters import FilterResponse,AllFiltersResponse
 from .conversations import ConversationResponse,FullConversationResponse
 from .testcases import TestCaseResponse

@@ -16,11 +16,12 @@ interface Props {
   hoveredMetric: string | null;
   hoveredPlan?: string | null;        // Make optional with ?
   onHoverPlan?: (plan: string | null) => void;  // Make optional with ?
+  onHoverMetric: (metric: string | null) => void; // ✅ ADD
 }
 
 /* ===== COMPONENT ===== */
 
-const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric }) => {
+const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, onHoverMetric }) => {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
 
   useEffect(() => {
@@ -130,7 +131,9 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric }) => {
                               ? 1
                               : 0.25,
                         }}
-                      />
+                        onMouseEnter={() => onHoverMetric(e.metric_name)} // update parent state
+                        onMouseLeave={() => onHoverMetric(null)} 
+                        />
                     );
                   })}
                 </div>
@@ -149,16 +152,12 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric }) => {
                 </div>
               </div>
 
-              {/* DOTTED GAP */}
+              {/* DOTTED GAP - Only show on hover */}
               {index < planNames.length - 1 && (
-                <div className={styles.planConnector}>
-                  <span 
-                    className={styles.gapLabel}
-                    data-tooltip={`${(planGaps[index] / 1000).toFixed(2)}s gap`}
-                  >
-                    {formatTimeGap(planGaps[index])}
-                  </span>
-                </div>
+                <div 
+                  className={styles.planConnector}
+                  data-gap={`${(planGaps[index] / 1000).toFixed(2)}s gap`}
+                />
               )}
             </React.Fragment>
           );
