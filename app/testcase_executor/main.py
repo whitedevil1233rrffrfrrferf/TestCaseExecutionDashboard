@@ -388,7 +388,7 @@ def main():
                 if run.status == "NEW":
                     run.start_ts = datetime.now().isoformat()
                     
-                # change the run status to "RUNNING"
+                  # change the run status to "RUNNING"
                 run.status = "RUNNING"
                 db.add_or_update_testrun(run=run)
 

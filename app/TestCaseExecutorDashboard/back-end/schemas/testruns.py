@@ -50,6 +50,8 @@ class RunEvaluationSummaryResponse(BaseModel):
 class NewTestRun(BaseModel):
     target: str
     testPlanId: Optional[int] = None
+    testCaseId: Optional[int] = None
+    metricId: Optional[int] = None
     metric: str
     maxTestCases: str
     domain: str

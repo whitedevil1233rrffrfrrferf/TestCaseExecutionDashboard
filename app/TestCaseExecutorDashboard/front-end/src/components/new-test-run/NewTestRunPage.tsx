@@ -8,6 +8,8 @@ import CustomSelect from './CustomSelect/CustomSelect';
 interface RunFormData {
   target: string;
   testPlanId: number | null;
+  testCaseId: number | null;
+  metricId: number | null;
   metric: string;
   maxTestCases: string;
   domain: string;
@@ -16,7 +18,7 @@ interface RunFormData {
 
 const NewTestRunPage: React.FC = () => {
   // Sample data for dropdowns
-  const targets = ['Vaidhya AI', 'Target 2', 'Target 3'];
+  const targets = ['Vaidya AI', 'Target 2', 'Target 3'];
   const testPlans = ['Plan 1', 'Plan 2', 'Plan 3'];
   const metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score'];
   const maxTestCases = ['10', '20', '30', '50', '100'];
@@ -26,6 +28,8 @@ const NewTestRunPage: React.FC = () => {
   const [formData, setFormData] = useState<RunFormData>({
     target: "",
     testPlanId: null,
+    testCaseId:null,
+    metricId: null,
     metric: "",
     maxTestCases: "",
     domain: "",
@@ -45,7 +49,7 @@ const NewTestRunPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch("http://localhost:8000/start-run", {
+    const res = await fetch("http://localhost:7000/start-run", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,13 +97,27 @@ const NewTestRunPage: React.FC = () => {
               }
             />
           </div>
+          <div className="filter-item">
+            <label>Test Case ID</label>
+            <input
+              type="number"
+              placeholder="Enter Test Plan ID"
+              value={formData.testCaseId?? ""}
+              onChange={(e) =>
+                handleChange("testCaseId", Number(e.target.value))
+              }
+            />
+          </div>
 
           <div className="filter-item">
-            <label>Metrics</label>
-            <CustomSelect
-              options={metrics}
-              defaultText="Select Metrics"
-              onChange={(val) => handleChange("metric", val)}
+            <label>Metric ID</label>
+            <input
+              type="number"
+              placeholder="Enter Test Plan ID"
+              value={formData.metricId?? ""}
+              onChange={(e) =>
+                handleChange("metricId", Number(e.target.value))
+              }
             />
           </div>
         </div>

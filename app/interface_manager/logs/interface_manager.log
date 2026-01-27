@@ -1,0 +1,300 @@
+[2026-01-23 15:19:24,206] [INFO] interface_manager - Launching WhatsApp Web at https://web.whatsapp.com
+[2026-01-23 15:28:33,072] [INFO] interface_manager - Driver ready for WhatsApp Web
+[2026-01-23 15:28:33,074] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:28:43,516] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:28:43,602] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:28:43,602] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:28:54,057] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:28:54,134] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:28:54,134] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:29:04,606] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:29:04,678] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:29:04,679] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:29:15,116] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:29:15,197] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:29:15,198] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:29:25,639] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:29:25,716] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:29:25,717] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:29:36,171] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:29:36,264] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:29:36,264] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:29:46,722] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:29:46,795] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:29:46,796] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:29:57,234] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:29:57,307] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:29:57,308] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:30:07,738] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:30:07,812] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:30:07,813] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:30:18,261] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:30:18,343] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:30:18,343] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:30:28,768] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:30:28,843] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:30:28,844] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:30:39,267] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+
+[2026-01-23 15:30:39,347] [INFO] interface_manager - Reusing existing Chrome session for WhatsApp Web
+[2026-01-23 15:30:39,348] [INFO] interface_manager - whatsapp_web has no LoginPage config → skipping login
+[2026-01-23 15:30:49,790] [ERROR] interface_manager - whatsapp_web: search failed for 'Vaidya AI': Message: 
+Stacktrace:
+#0 0x5fd29a14740a <unknown>
+#1 0x5fd299b7b76b <unknown>
+#2 0x5fd299bcce88 <unknown>
+#3 0x5fd299bcd0c1 <unknown>
+#4 0x5fd299c1b2c4 <unknown>
+#5 0x5fd299c18760 <unknown>
+#6 0x5fd299bbf7b2 <unknown>
+#7 0x5fd299bc0461 <unknown>
+#8 0x5fd29a10fdf9 <unknown>
+#9 0x5fd29a112d5d <unknown>
+#10 0x5fd29a0f8b41 <unknown>
+#11 0x5fd29a11393b <unknown>
+#12 0x5fd29a0df870 <unknown>
+#13 0x5fd29a134828 <unknown>
+#14 0x5fd29a1349fc <unknown>
+#15 0x5fd29a146763 <unknown>
+#16 0x79319149caa4 <unknown>
+#17 0x793191529c6c <unknown>
+

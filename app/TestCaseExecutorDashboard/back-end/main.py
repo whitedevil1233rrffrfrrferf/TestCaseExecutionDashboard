@@ -18,9 +18,11 @@ load_dotenv()
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 import datetime
 from datetime import datetime
-from lib.orm import DB,tables
+from lib.orm import DB
+from lib.data import Target, Run, RunDetail, Conversation
 
-from lib.orm.tables import Run
+from lib.orm.tables import TestRuns
+from lib.interface_manager import InterfaceManagerClient  # Import the InterfaceManagerClient from the lib directory
 
 # db_url = (
 #             f"mysql+mysqlconnector://"
@@ -35,7 +37,7 @@ db_file = "AIEvaluationData.db"
 
 # Resolve project root (this file → importer → app → src → project_root)
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-print(project_root)
+
 
 # Place DB inside project_root/data
 db_folder = os.path.join(project_root, "data")
@@ -58,7 +60,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get(
     "/get_all_test_runs",
@@ -444,7 +445,6 @@ def get_full_conversation(conversation_id: int):
         reason=conversation.evaluation_reason
     )
 
-
 @app.get("/conversations/{conversation_id}/timeline")
 def get_conversation_timeline_api(conversation_id: int):
     
@@ -470,32 +470,135 @@ def get_test_run_timeline(run_name: str):
 @app.post("/start-run")
 def start_run(data: NewTestRun):
     if data.testPlanId:
-        ## Create a random name for the run
+        ### Initialising the form variables
+
+        target = data.target
+        test_plan_id = data.testPlanId
+        test_case_id = data.testCaseId
+        metric_id = data.metricId
+        lang_names=None
+        domain_name=None
+
+        ## Create a random name for the run and generating run id
+
         run_name = randomname.generate('v/*','adj/*','n/*','ip/*')
         start_time = datetime.now().isoformat()
-        run = Run(target = target.target_name, run_name=run_name, start_ts=start_time)
+        print(type(start_time))
+        run = Run(target = target, run_name=run_name, start_ts=start_time)
+        # print(run)
         run_id = db.add_or_update_testrun(run=run)
-        print(f"Starting run: {run_name} with ID: {run_id}")
-        plan_name = db.get_testplan_name(plan_id=data.testPlanId)
-        print(f"Starting run with Test Plan: {plan_name} (ID: {data.testPlanId})")
+        print(f"Starting run: {run_name} with run id {run_id}")
+
+        ## Getting the plan name 
+
+        plan_name = db.get_testplan_name(plan_id=test_plan_id)
+
+        if plan_name is None:
+            print(f"No test plan found with ID {test_plan_id}.")
+            return
+        print(f"Starting run with Test Plan: {plan_name} (ID: {test_plan_id})")
+
+        ## checking the conditionality for metric id and test case id provided and updating the test run
+
+        if test_case_id:
+            testcase = db.get_testcase_by_id(testcase_id=test_case_id)
+            if testcase is None:
+                    print(f"No test case found with ID {test_case_id}.")
+                    return
+            run.status = "RUNNING"
+            db.add_or_update_testrun(run=run)
+            rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
+            rundetail_id = db.add_or_update_testrun_detail(rundetail)
+            run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
+            if run_status is not None and run_status == "COMPLETED":
+                print("Already completed")
+
+            else:
+                print("Sucessfully done with TestCaseId")  
+
+        if metric_id:
+
+            ## Get the metric name and see if it matches with metric id and test plan id
+
+            metric_name = db.get_metric_name(metric_id=metric_id)  
+            is_metric_in_plan = db.is_metric_in_testplan(metric_name=metric_name, plan_name=plan_name)  
+            if not is_metric_in_plan:
+                print("error")
 
 
-    # print("Received data:")
-    # print("Target:", data.target)
-    # print("Test Plan:", data.testPlanId)
-    # print("Metric:", data.metric)
-    # print("Max Test Cases:", data.maxTestCases)
-    # print("Domain:", data.domain)
-    # print("Language:", data.language)
+            testcases = db.get_testcases_by_metric(metric_name=metric_name, n=0, lang_name=lang_names, domain_name=domain_name)    
 
-    return {"status": "success"}
+            if not testcases:
+                print("No Test cases Found")
+                return
+
+            ## Get the metric from the provided ID 
+
+            metric = db.get_metric_by_id(metric_id=metric_id)
+            if metric is None:
+                print("No Metric Found")
+                return
+            run.status = "RUNNING"
+            db.add_or_update_testrun(run=run)
+            agent_name = target
+            application_name = target
+            application_url = "https://web.whatsapp.com"
+            application_type = "WHATSAPP_WEB"
+            print("started syncing")
+            client = InterfaceManagerClient(base_url="http://localhost:8000" ,application_type=application_type, agent_name=agent_name)
+            client.sync_config({
+                    "application_name": application_name,
+                    "application_type": application_type,
+                    "agent_name": agent_name,
+                    "application_url": application_url
+                })
+            client.apply_server_config()
+            for testcase in testcases:
+                rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
+                rundetail_id = db.add_or_update_testrun_detail(rundetail)
+                run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
+                if run_status is not None and run_status == "COMPLETED":
+                    print(f"Run detail for testcase {testcase.name} (ID: {testcase.testcase_id}) is already completed. Skipping execution.")
+                    continue
+                message_to_agent = testcase.prompt.user_prompt if testcase.prompt.user_prompt else ""
+                if testcase.prompt.system_prompt:
+                    message_to_agent = testcase.prompt.system_prompt + " " + message_to_agent
+
+                conv = Conversation(target=target, 
+                                    run_detail_id=rundetail_id, 
+                                    testcase=testcase.name)
+                conv_id = db.add_or_update_conversation(conversation=conv)
+                print(f"A new conversation is created with ID: {conv_id}")
+                rundetail.status = "RUNNING"
+                db.add_or_update_testrun_detail(rundetail)
+                # print("completed")
+                
+                conv.prompt_ts = datetime.now().isoformat()
+                db.add_or_update_conversation(conversation=conv)
+                print("prompt time added")    
+                response_from_agent = client.chat(chat_id = testcase.testcase_id, prompt_list=[message_to_agent])
+                agent_response = response_from_agent.json().get("response", "")
+                if len(agent_response) == 0 or agent_response[0]['response'] == "Chat not found":
+                    print(f"No response received from the agent for test case {testcase.testcase_id}.")
+                    rundetail.status = "FAILED"
+                    db.add_or_update_testrun_detail(rundetail)
+                    continue
+                conv.response_ts = datetime.now().isoformat()
+                print("Response time added") 
+                conv.agent_response = agent_response[0]['response']
+                db.add_or_update_conversation(conversation=conv)
+                rundetail.status = "COMPLETED"
+                db.add_or_update_testrun_detail(rundetail)
+                print("completed Response time")
+                
+        return {"status": "success"}
+    else:
+        return("Test Plan ID is mandatory")
 
 if __name__ == "__main__":
-    
-
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=7000,
         reload=True
     )
