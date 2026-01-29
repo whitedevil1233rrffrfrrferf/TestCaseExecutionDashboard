@@ -1,12 +1,14 @@
 import os
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, WebSocket, BackgroundTasks,WebSocketDisconnect
 from fastapi.responses import FileResponse
+from services.ws_manager import ws_manager 
 from openpyxl import Workbook
 from typing import Optional, List
 import tempfile
 import os
 import mysql.connector
 import uvicorn
+import asyncio
 from mysql.connector import Error
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
@@ -60,6 +62,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# def run_execute_testcases(*args):
+#     import asyncio
+#     asyncio.run(execute_testcases(*args))
+
+## WebSocket for real-time updates
+
+@app.websocket("/ws/test-run")
+async def websocket_endpoint(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
 
 @app.get(
     "/get_all_test_runs",
@@ -468,7 +487,7 @@ def get_test_run_timeline(run_name: str):
     return timeline
 
 @app.post("/start-run")
-def start_run(data: NewTestRun):
+def start_run(data: NewTestRun, background_tasks: BackgroundTasks):
     if data.testPlanId:
         ### Initialising the form variables
 
@@ -483,117 +502,296 @@ def start_run(data: NewTestRun):
 
         run_name = randomname.generate('v/*','adj/*','n/*','ip/*')
         start_time = datetime.now().isoformat()
-        print(type(start_time))
-        run = Run(target = target, run_name=run_name, start_ts=start_time)
-        # print(run)
-        run_id = db.add_or_update_testrun(run=run)
+        run = Run(target=target, run_name=run_name, start_ts=start_time)
+        run_id = db.add_or_update_testrun(run)
         print(f"Starting run: {run_name} with run id {run_id}")
 
-        ## Getting the plan name 
-
+        
         plan_name = db.get_testplan_name(plan_id=test_plan_id)
-
+        
         if plan_name is None:
             print(f"No test plan found with ID {test_plan_id}.")
             return
         print(f"Starting run with Test Plan: {plan_name} (ID: {test_plan_id})")
 
-        ## checking the conditionality for metric id and test case id provided and updating the test run
-
-        if test_case_id:
-            testcase = db.get_testcase_by_id(testcase_id=test_case_id)
-            if testcase is None:
-                    print(f"No test case found with ID {test_case_id}.")
-                    return
-            run.status = "RUNNING"
-            db.add_or_update_testrun(run=run)
-            rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
-            rundetail_id = db.add_or_update_testrun_detail(rundetail)
-            run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
-            if run_status is not None and run_status == "COMPLETED":
-                print("Already completed")
-
-            else:
-                print("Sucessfully done with TestCaseId")  
-
         if metric_id:
-
-            ## Get the metric name and see if it matches with metric id and test plan id
-
             metric_name = db.get_metric_name(metric_id=metric_id)  
             is_metric_in_plan = db.is_metric_in_testplan(metric_name=metric_name, plan_name=plan_name)  
             if not is_metric_in_plan:
-                print("error")
-
-
-            testcases = db.get_testcases_by_metric(metric_name=metric_name, n=0, lang_name=lang_names, domain_name=domain_name)    
-
+                return
+            testcases = db.get_testcases_by_metric(
+                metric_name=db.get_metric_name(metric_id),
+                n=3,
+                lang_name=None,
+                domain_name=None
+            ) 
             if not testcases:
                 print("No Test cases Found")
                 return
-
-            ## Get the metric from the provided ID 
-
+            #     ## Get the metric from the provided ID 
+            total_testcases = len(testcases)
             metric = db.get_metric_by_id(metric_id=metric_id)
             if metric is None:
                 print("No Metric Found")
                 return
             run.status = "RUNNING"
             db.add_or_update_testrun(run=run)
-            agent_name = target
-            application_name = target
-            application_url = "https://web.whatsapp.com"
-            application_type = "WHATSAPP_WEB"
-            print("started syncing")
-            client = InterfaceManagerClient(base_url="http://localhost:8000" ,application_type=application_type, agent_name=agent_name)
-            client.sync_config({
-                    "application_name": application_name,
-                    "application_type": application_type,
-                    "agent_name": agent_name,
-                    "application_url": application_url
-                })
-            client.apply_server_config()
-            for testcase in testcases:
-                rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
-                rundetail_id = db.add_or_update_testrun_detail(rundetail)
-                run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
-                if run_status is not None and run_status == "COMPLETED":
-                    print(f"Run detail for testcase {testcase.name} (ID: {testcase.testcase_id}) is already completed. Skipping execution.")
-                    continue
-                message_to_agent = testcase.prompt.user_prompt if testcase.prompt.user_prompt else ""
-                if testcase.prompt.system_prompt:
-                    message_to_agent = testcase.prompt.system_prompt + " " + message_to_agent
+            background_tasks.add_task(
+                execute_testcases,
+                run_name,
+                run_id,
+                plan_name,
+                target,
+                metric_id,
+                testcases
+            )
+            # agent_name = target
+            # application_name = target
+            # application_url = "https://web.whatsapp.com"
+            # application_type = "WHATSAPP_WEB"
+            # print("started syncing")
+            # client = InterfaceManagerClient(base_url="http://localhost:8000" ,application_type=application_type, agent_name=agent_name)
+            # client.sync_config({
+            #         "application_name": application_name,
+            #         "application_type": application_type,
+            #         "agent_name": agent_name,
+            #         "application_url": application_url
+            #     })
+            # client.apply_server_config()
+            # for testcase in testcases:
+            #     rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
+            #     rundetail_id = db.add_or_update_testrun_detail(rundetail)
+            #     run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
+            #     if run_status is not None and run_status == "COMPLETED":
+            #         print(f"Run detail for testcase {testcase.name} (ID: {testcase.testcase_id}) is already completed. Skipping execution.")
+            #         continue
+            #     message_to_agent = testcase.prompt.user_prompt if testcase.prompt.user_prompt else ""
+            #     if testcase.prompt.system_prompt:
+            #         message_to_agent = testcase.prompt.system_prompt + " " + message_to_agent
 
-                conv = Conversation(target=target, 
-                                    run_detail_id=rundetail_id, 
-                                    testcase=testcase.name)
-                conv_id = db.add_or_update_conversation(conversation=conv)
-                print(f"A new conversation is created with ID: {conv_id}")
-                rundetail.status = "RUNNING"
-                db.add_or_update_testrun_detail(rundetail)
-                # print("completed")
+            #     conv = Conversation(target=target, 
+            #                         run_detail_id=rundetail_id, 
+            #                         testcase=testcase.name)
+            #     conv_id = db.add_or_update_conversation(conversation=conv)
+            #     print(f"A new conversation is created with ID: {conv_id}")
+            #     rundetail.status = "RUNNING"
+            #     db.add_or_update_testrun_detail(rundetail)
+            #     # print("completed")
                 
-                conv.prompt_ts = datetime.now().isoformat()
-                db.add_or_update_conversation(conversation=conv)
-                print("prompt time added")    
-                response_from_agent = client.chat(chat_id = testcase.testcase_id, prompt_list=[message_to_agent])
-                agent_response = response_from_agent.json().get("response", "")
-                if len(agent_response) == 0 or agent_response[0]['response'] == "Chat not found":
-                    print(f"No response received from the agent for test case {testcase.testcase_id}.")
-                    rundetail.status = "FAILED"
-                    db.add_or_update_testrun_detail(rundetail)
-                    continue
-                conv.response_ts = datetime.now().isoformat()
-                print("Response time added") 
-                conv.agent_response = agent_response[0]['response']
-                db.add_or_update_conversation(conversation=conv)
-                rundetail.status = "COMPLETED"
-                db.add_or_update_testrun_detail(rundetail)
-                print("completed Response time")
+            #     conv.prompt_ts = datetime.now().isoformat()
+            #     db.add_or_update_conversation(conversation=conv)
+            #     print("prompt time added")    
+            #     response_from_agent = client.chat(chat_id = testcase.testcase_id, prompt_list=[message_to_agent])
+            #     agent_response = response_from_agent.json().get("response", "")
+            #     if len(agent_response) == 0 or agent_response[0]['response'] == "Chat not found":
+            #         print(f"No response received from the agent for test case {testcase.testcase_id}.")
+            #         rundetail.status = "FAILED"
+            #         db.add_or_update_testrun_detail(rundetail)
+            #         continue
+            #     conv.response_ts = datetime.now().isoformat()
+            #     print("Response time added") 
+            #     conv.agent_response = agent_response[0]['response']
+            #     db.add_or_update_conversation(conversation=conv)
+            #     rundetail.status = "COMPLETED"
+            #     db.add_or_update_testrun_detail(rundetail)
+            #     print("completed Response time")
+            
+        # 🔹 Get testcases count (NO execution here)
+
+        return {
+            "status": "success",
+            "runId": run_id,
+            "runName": run_name,
+            "testPlanId": test_plan_id,
+            "metricId": metric_id,
+            "target": target,
+            "totalTestCases": total_testcases
+        }
+        ## Create a random name for the run and generating run id
+
+        # run_name = randomname.generate('v/*','adj/*','n/*','ip/*')
+        # start_time = datetime.now().isoformat()
+        # print(type(start_time))
+        # run = Run(target = target, run_name=run_name, start_ts=start_time)
+        # # print(run)
+        # run_id = db.add_or_update_testrun(run=run)
+        # print(f"Starting run: {run_name} with run id {run_id}")
+
+        # ## Getting the plan name 
+
+        # plan_name = db.get_testplan_name(plan_id=test_plan_id)
+
+        # if plan_name is None:
+        #     print(f"No test plan found with ID {test_plan_id}.")
+        #     return
+        # print(f"Starting run with Test Plan: {plan_name} (ID: {test_plan_id})")
+
+        # ## checking the conditionality for metric id and test case id provided and updating the test run
+
+        # if test_case_id:
+        #     testcase = db.get_testcase_by_id(testcase_id=test_case_id)
+        #     if testcase is None:
+        #             print(f"No test case found with ID {test_case_id}.")
+        #             return
+        #     run.status = "RUNNING"
+        #     db.add_or_update_testrun(run=run)
+        #     rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
+        #     rundetail_id = db.add_or_update_testrun_detail(rundetail)
+        #     run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
+        #     if run_status is not None and run_status == "COMPLETED":
+        #         print("Already completed")
+
+        #     else:
+        #         print("Sucessfully done with TestCaseId")  
+
+        # if metric_id:
+
+        #     ## Get the metric name and see if it matches with metric id and test plan id
+
+        #     metric_name = db.get_metric_name(metric_id=metric_id)  
+        #     is_metric_in_plan = db.is_metric_in_testplan(metric_name=metric_name, plan_name=plan_name)  
+        #     if not is_metric_in_plan:
+        #         print("error")
+
+
+        #     testcases = db.get_testcases_by_metric(metric_name=metric_name, n=0, lang_name=lang_names, domain_name=domain_name)    
+
+        #     if not testcases:
+        #         print("No Test cases Found")
+        #         return
+
+        #     ## Get the metric from the provided ID 
+
+        #     metric = db.get_metric_by_id(metric_id=metric_id)
+        #     if metric is None:
+        #         print("No Metric Found")
+        #         return
+        #     run.status = "RUNNING"
+        #     db.add_or_update_testrun(run=run)
+        #     agent_name = target
+        #     application_name = target
+        #     application_url = "https://web.whatsapp.com"
+        #     application_type = "WHATSAPP_WEB"
+        #     print("started syncing")
+        #     client = InterfaceManagerClient(base_url="http://localhost:8000" ,application_type=application_type, agent_name=agent_name)
+        #     client.sync_config({
+        #             "application_name": application_name,
+        #             "application_type": application_type,
+        #             "agent_name": agent_name,
+        #             "application_url": application_url
+        #         })
+        #     client.apply_server_config()
+        #     for testcase in testcases:
+        #         rundetail = RunDetail(run_name=run_name, plan_name=plan_name, metric_name=testcase.metric, testcase_name=testcase.name)
+        #         rundetail_id = db.add_or_update_testrun_detail(rundetail)
+        #         run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
+        #         if run_status is not None and run_status == "COMPLETED":
+        #             print(f"Run detail for testcase {testcase.name} (ID: {testcase.testcase_id}) is already completed. Skipping execution.")
+        #             continue
+        #         message_to_agent = testcase.prompt.user_prompt if testcase.prompt.user_prompt else ""
+        #         if testcase.prompt.system_prompt:
+        #             message_to_agent = testcase.prompt.system_prompt + " " + message_to_agent
+
+        #         conv = Conversation(target=target, 
+        #                             run_detail_id=rundetail_id, 
+        #                             testcase=testcase.name)
+        #         conv_id = db.add_or_update_conversation(conversation=conv)
+        #         print(f"A new conversation is created with ID: {conv_id}")
+        #         rundetail.status = "RUNNING"
+        #         db.add_or_update_testrun_detail(rundetail)
+        #         # print("completed")
+                
+        #         conv.prompt_ts = datetime.now().isoformat()
+        #         db.add_or_update_conversation(conversation=conv)
+        #         print("prompt time added")    
+        #         response_from_agent = client.chat(chat_id = testcase.testcase_id, prompt_list=[message_to_agent])
+        #         agent_response = response_from_agent.json().get("response", "")
+        #         if len(agent_response) == 0 or agent_response[0]['response'] == "Chat not found":
+        #             print(f"No response received from the agent for test case {testcase.testcase_id}.")
+        #             rundetail.status = "FAILED"
+        #             db.add_or_update_testrun_detail(rundetail)
+        #             continue
+        #         conv.response_ts = datetime.now().isoformat()
+        #         print("Response time added") 
+        #         conv.agent_response = agent_response[0]['response']
+        #         db.add_or_update_conversation(conversation=conv)
+        #         rundetail.status = "COMPLETED"
+        #         db.add_or_update_testrun_detail(rundetail)
+        #         print("completed Response time")
                 
         return {"status": "success"}
     else:
         return("Test Plan ID is mandatory")
+
+
+
+async def execute_testcases(
+    run_name,
+    run_id,
+    plan_name,
+    target,
+    metric_id,
+    testcases
+):
+    print(f"🚀 Background execution started for run {run_id}")
+
+    agent_name = target
+    application_name = target
+    application_url = "https://web.whatsapp.com"
+    application_type = "WHATSAPP_WEB"
+
+    client = InterfaceManagerClient(
+        base_url="http://localhost:8000",
+        application_type=application_type,
+        agent_name=agent_name
+    )
+    await ws_manager.send_all({
+        "type": "RUN_STARTED",
+        "runId": run_id,
+        "total": len(testcases)
+    })
+    client.sync_config({
+        "application_name": application_name,
+        "application_type": application_type,
+        "agent_name": agent_name,
+        "application_url": application_url
+    })
+    client.apply_server_config()
+
+    for index, testcase in enumerate(testcases, start=1):
+        print(f"⚙️ Running testcase: {testcase.name}")
+
+        rundetail = RunDetail(
+            run_name=run_name,
+            plan_name=plan_name,
+            metric_name=testcase.metric,
+            testcase_name=testcase.name
+        )
+        rundetail_id = db.add_or_update_testrun_detail(rundetail)
+
+        message_to_agent = testcase.prompt.user_prompt or ""
+        if testcase.prompt.system_prompt:
+            message_to_agent = testcase.prompt.system_prompt + " " + message_to_agent
+
+        response_from_agent = client.chat(
+            chat_id=testcase.testcase_id,
+            prompt_list=[message_to_agent]
+        )
+        await ws_manager.send_all({
+            "type": "TESTCASE_FINISHED",
+            "runId": run_id,
+            "current": index
+        })
+
+        print(f"✅ Finished testcase: {testcase.name}")
+    await ws_manager.send_all({
+        "type": "RUN_FINISHED",
+        "runId": run_id
+    })
+    print(f"🏁 Background execution finished for run {run_id}")
+
+
+
 
 if __name__ == "__main__":
     uvicorn.run(

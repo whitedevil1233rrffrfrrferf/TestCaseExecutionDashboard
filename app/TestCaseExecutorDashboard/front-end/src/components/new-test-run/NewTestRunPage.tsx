@@ -4,6 +4,7 @@ import './NewTestRunPage.css';
 // Import only the Bootstrap CSS for the select components
 
 import CustomSelect from './CustomSelect/CustomSelect';
+import Loop from './Loop/Loop';
 
 interface RunFormData {
   target: string;
@@ -24,7 +25,8 @@ const NewTestRunPage: React.FC = () => {
   const maxTestCases = ['10', '20', '30', '50', '100'];
   const domains = ['E-commerce', 'Healthcare', 'Finance', 'Education'];
   const languages = ['English', 'Spanish', 'French', 'German', 'Chinese'];
-
+  const [isRunning, setIsRunning] = useState(false);
+  const [totalTestCases, setTotalTestCases] = useState(0);
   const [formData, setFormData] = useState<RunFormData>({
     target: "",
     testPlanId: null,
@@ -48,7 +50,7 @@ const NewTestRunPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setIsRunning(true); 
     const res = await fetch("http://localhost:7000/start-run", {
       method: "POST",
       headers: {
@@ -57,8 +59,31 @@ const NewTestRunPage: React.FC = () => {
       body: JSON.stringify(formData),
     });
 
-    const data = await res.json();
-    console.log("Backend response:", data);
+    const runData = await res.json(); // <-- this should now include runName, runId, testPlanId, metricId
+    console.log("POST /start-run response:", runData);
+    setTotalTestCases(runData.totalTestCases);
+    setIsRunning(true); // now we can start the Loop component
+
+    // 2️⃣ Open WebSocket to get live updates
+    const ws = new WebSocket("ws://localhost:7000/ws/test-run");
+
+    ws.onopen = () => {
+      console.log("WebSocket connected, sending run info");
+      ws.send(JSON.stringify(runData)); // send metric_id, runId, etc.
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data); // backend sends JSON updates
+      console.log("Update from backend:", data);
+
+      // Example: if backend sends total_test_cases
+      // setTotalTestCases(data.total);
+      // setCurrentTestCase(data.current);
+  };
+
+  ws.onclose = () => {
+    console.log("WebSocket closed");
+  };
   };
 
   return (
@@ -155,7 +180,7 @@ const NewTestRunPage: React.FC = () => {
           Start Run
         </button>
       </form>
-
+      {isRunning && <Loop isRunning={isRunning} totalTestCases={totalTestCases}/>}       
       
     </div>
   );
