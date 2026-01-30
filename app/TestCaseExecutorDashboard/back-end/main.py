@@ -7,6 +7,7 @@ from typing import Optional, List
 import tempfile
 import os
 import mysql.connector
+
 import uvicorn
 import asyncio
 from mysql.connector import Error
@@ -543,7 +544,8 @@ def start_run(data: NewTestRun, background_tasks: BackgroundTasks):
                 plan_name,
                 target,
                 metric_id,
-                testcases
+                testcases,
+                run
             )
             # agent_name = target
             # application_name = target
@@ -605,7 +607,8 @@ def start_run(data: NewTestRun, background_tasks: BackgroundTasks):
             "testPlanId": test_plan_id,
             "metricId": metric_id,
             "target": target,
-            "totalTestCases": total_testcases
+            "totalTestCases": total_testcases,
+            
         }
         ## Create a random name for the run and generating run id
 
@@ -731,7 +734,8 @@ async def execute_testcases(
     plan_name,
     target,
     metric_id,
-    testcases
+    testcases,
+    run
 ):
     print(f"🚀 Background execution started for run {run_id}")
 
@@ -768,15 +772,49 @@ async def execute_testcases(
             testcase_name=testcase.name
         )
         rundetail_id = db.add_or_update_testrun_detail(rundetail)
+        run_status = db.get_status_by_run_detail_id(run_detail_id=rundetail_id)
+        if run_status is not None and run_status == "COMPLETED":
+            print(f"Run detail for testcase {testcase.name} (ID: {testcase.testcase_id}) is already completed. Skipping execution.")
+            continue
 
         message_to_agent = testcase.prompt.user_prompt or ""
         if testcase.prompt.system_prompt:
             message_to_agent = testcase.prompt.system_prompt + " " + message_to_agent
 
+        conv = Conversation(target=target, 
+                            run_detail_id=rundetail_id, 
+                            testcase=testcase.name)
+        conv_id = db.add_or_update_conversation(conversation=conv)    
+        print(f"A new conversation is created with ID: {conv_id}")
+
+        rundetail.status = "RUNNING"
+        db.add_or_update_testrun_detail(rundetail)
+        conv.prompt_ts = datetime.now().isoformat()
+        db.add_or_update_conversation(conversation=conv)
+
         response_from_agent = client.chat(
             chat_id=testcase.testcase_id,
             prompt_list=[message_to_agent]
         )
+        agent_response = response_from_agent.json().get("response", "")
+        if len(agent_response) == 0 or agent_response[0]['response'] == "Chat not found":
+            print(f"No response received from the agent for test case {testcase.testcase_id}.")
+            rundetail.status = "FAILED"
+            db.add_or_update_testrun_detail(rundetail)
+            continue
+        conv.response_ts = datetime.now().isoformat()
+        conv.agent_response = agent_response[0]['response']
+        db.add_or_update_conversation(conversation=conv)
+
+ 
+        rundetail.status = "COMPLETED"
+        db.add_or_update_testrun_detail(rundetail)
+        run.end_ts = datetime.now().isoformat()
+        run.status = "COMPLETED"
+        db.add_or_update_testrun(run=run)
+
+        # client.close()
+
         await ws_manager.send_all({
             "type": "TESTCASE_FINISHED",
             "runId": run_id,

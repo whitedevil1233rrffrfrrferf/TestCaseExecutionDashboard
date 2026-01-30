@@ -40,3 +40,11 @@
 [2026-01-29 18:13:02,448] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
 [2026-01-29 18:13:02,595] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
 [2026-01-29 18:13:02,725] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
+[2026-01-30 15:14:37,252] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
+[2026-01-30 15:14:37,397] [INFO] whatsapp_driver - WhatsApp Web session closed successfully.
+[2026-01-30 15:14:53,392] [INFO] whatsapp_driver - WhatsApp Web session closed successfully.
+[2026-01-30 15:15:10,735] [INFO] whatsapp_driver - WhatsApp Web session closed successfully.
+[2026-01-30 15:15:37,776] [INFO] whatsapp_driver - WhatsApp Web session closed successfully.
+[2026-01-30 15:15:53,420] [INFO] whatsapp_driver - WhatsApp Web session closed successfully.
+[2026-01-30 15:15:55,905] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
+[2026-01-30 15:15:55,966] [INFO] whatsapp_driver - WhatsApp Web session closed successfully.
