@@ -68,7 +68,13 @@ const RunDetails: React.FC = () => {
     metric?: string;
     status?: string;
   }>({});
+  useEffect(() => {
+    console.log("🔴 hoveredMetric changed to:", hoveredMetric);
+  }, [hoveredMetric]);
 
+  useEffect(() => {
+    console.log("🔵 hoveredPlan changed to:", hoveredPlan);
+  }, [hoveredPlan]);
   const statusMap = (status: string | null | undefined): "COMPLETED" | "RUNNING" | "FAILED" | undefined => {
     if (status === "COMPLETED" || status === "RUNNING" || status === "FAILED") return status;
     return undefined;
@@ -284,6 +290,7 @@ const RunDetails: React.FC = () => {
                       setHoveredMetric(null);
                     }}
                   >
+                    {/* <td >{`Metric: ${d.metric_name}, Hovered: ${hoveredMetric}, Match: ${hoveredMetric === d.metric_name}, ClassName: ${hoveredMetric === d.metric_name ? styles.metricRowHover : "NONE"}`}</td> */}
                     {index === 0 && (
                       <td
                         rowSpan={planDetails.length}
