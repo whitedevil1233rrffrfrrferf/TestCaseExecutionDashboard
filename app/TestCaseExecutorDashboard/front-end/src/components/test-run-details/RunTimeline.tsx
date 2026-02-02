@@ -25,7 +25,7 @@ const RunTimeline: React.FC<Props> = ({ runName, hoveredMetric, onHoverMetric })
   const [events, setEvents] = useState<TimelineEvent[]>([]);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/test-runs/${runName}/timeline`)
+    fetch(`http://localhost:7000/test-runs/${runName}/timeline`)
       .then(res => res.json())
       .then(setEvents);
   }, [runName]);

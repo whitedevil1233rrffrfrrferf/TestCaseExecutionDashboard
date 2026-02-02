@@ -81,6 +81,10 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
 
+async def step(ws_payload, delay=0.1):
+    await ws_manager.send_all(ws_payload)
+    await asyncio.sleep(delay)
+
 @app.get(
     "/get_all_test_runs",
     response_model=list[TestRunResponse]
@@ -787,15 +791,50 @@ async def execute_testcases(
         conv_id = db.add_or_update_conversation(conversation=conv)    
         print(f"A new conversation is created with ID: {conv_id}")
 
+        # await ws_manager.send_all({
+        #     "type": "STEP_UPDATE",
+        #     "runId": run_id,
+        #     "testcaseIndex": index,
+        #     "step": 1,
+        #     "status": "RUNNING"
+        # })
         rundetail.status = "RUNNING"
         db.add_or_update_testrun_detail(rundetail)
         conv.prompt_ts = datetime.now().isoformat()
         db.add_or_update_conversation(conversation=conv)
 
+        await step({
+            "type": "STEP_UPDATE",
+            "runId": run_id,
+            "testcaseIndex": index,
+            "step": 1,
+            "status": "DONE"
+        })
+        # await ws_manager.send_all({
+        #     "type": "STEP_UPDATE",
+        #     "runId": run_id,
+        #     "testcaseIndex": index,
+        #     "step": 2,
+        #     "status": "RUNNING"
+        # })
         response_from_agent = client.chat(
             chat_id=testcase.testcase_id,
             prompt_list=[message_to_agent]
         )
+        await step({
+            "type": "STEP_UPDATE",
+            "runId": run_id,
+            "testcaseIndex": index,
+            "step": 2,
+            "status": "DONE"
+        })
+        # await ws_manager.send_all({
+        #     "type": "STEP_UPDATE",
+        #     "runId": run_id,
+        #     "testcaseIndex": index,
+        #     "step": 3,
+        #     "status": "RUNNING"
+        # })
         agent_response = response_from_agent.json().get("response", "")
         if len(agent_response) == 0 or agent_response[0]['response'] == "Chat not found":
             print(f"No response received from the agent for test case {testcase.testcase_id}.")
@@ -806,22 +845,43 @@ async def execute_testcases(
         conv.agent_response = agent_response[0]['response']
         db.add_or_update_conversation(conversation=conv)
 
- 
-        rundetail.status = "COMPLETED"
-        db.add_or_update_testrun_detail(rundetail)
-        run.end_ts = datetime.now().isoformat()
-        run.status = "COMPLETED"
-        db.add_or_update_testrun(run=run)
-
-        # client.close()
-
-        await ws_manager.send_all({
-            "type": "TESTCASE_FINISHED",
+        await step({
+            "type": "STEP_UPDATE",
             "runId": run_id,
-            "current": index
+            "testcaseIndex": index,
+            "step": 3,
+            "status": "DONE"
         })
+        # await ws_manager.send_all({
+        #     "type": "STEP_UPDATE",
+        #     "runId": run_id,
+        #     "testcaseIndex": index,
+        #     "step": 4,
+        #     "status": "RUNNING"
+        # })
+        await step({
+        "type": "STEP_UPDATE",
+        "runId": run_id,
+        "testcaseIndex": index,
+        "step": 4,
+        "status": "DONE"
+        })
+        await step({
+        "type": "TESTCASE_FINISHED",
+        "runId": run_id,
+        "current": index
+        })
+    rundetail.status = "COMPLETED"
+    db.add_or_update_testrun_detail(rundetail)
+    run.end_ts = datetime.now().isoformat()
+    run.status = "COMPLETED"
+    db.add_or_update_testrun(run=run)
+    
+        # client.close()
+    
+   
 
-        print(f"✅ Finished testcase: {testcase.name}")
+    print(f"✅ Finished testcase: {testcase.name}")
     await ws_manager.send_all({
         "type": "RUN_FINISHED",
         "runId": run_id

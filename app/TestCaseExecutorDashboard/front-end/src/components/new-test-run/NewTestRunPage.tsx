@@ -180,7 +180,7 @@ const NewTestRunPage: React.FC = () => {
           Start Run
         </button>
       </form>
-      {isRunning && <Loop isRunning={isRunning} totalTestCases={totalTestCases}/>}       
+      {isRunning && <Loop isRunning={isRunning} totalTestCases={totalTestCases} stepsPerTestCase={4}/>}       
       
     </div>
   );

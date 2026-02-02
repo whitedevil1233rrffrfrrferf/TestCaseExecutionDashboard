@@ -88,7 +88,7 @@ const RunDetails: React.FC = () => {
   };
 
   useEffect(() => {
-    fetch("http://localhost:8000/get_all_filters")
+    fetch("http://localhost:7000/get_all_filters")
       .then((res) => res.json())
       .then((data) => {
         setFiltersData({
@@ -114,7 +114,7 @@ const RunDetails: React.FC = () => {
     if (activeFilters.status) params.append("status", activeFilters.status);
 
     fetch(
-      `http://localhost:8000/test-runs/${encodeURIComponent(
+      `http://localhost:7000/test-runs/${encodeURIComponent(
         runName
       )}?${params.toString()}`
     )

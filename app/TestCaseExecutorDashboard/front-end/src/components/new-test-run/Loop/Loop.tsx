@@ -173,10 +173,21 @@ import { useEffect, useState } from "react";
 interface LoopProps {
   isRunning: boolean;
   totalTestCases: number;
+  stepsPerTestCase: number; // 👈 how many steps each TC has
 }
 
-const Loop: React.FC<LoopProps> = ({ isRunning, totalTestCases }) => {
+type StepStatus = "PENDING" | "RUNNING" | "DONE" | "FAILED";
+
+const Loop: React.FC<LoopProps> = ({
+  isRunning,
+  totalTestCases,
+  stepsPerTestCase,
+}) => {
   const [currentTestCase, setCurrentTestCase] = useState(0);
+  // Track status for each step individually
+  const [stepStatuses, setStepStatuses] = useState<StepStatus[]>(
+    Array(stepsPerTestCase).fill("PENDING")
+  );
 
   const progressPercent =
     totalTestCases === 0
@@ -194,26 +205,57 @@ const Loop: React.FC<LoopProps> = ({ isRunning, totalTestCases }) => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-
       console.log("📩 WS EVENT:", data);
 
-      if (data.type === "RUN_STARTED") {
-        setCurrentTestCase(0);
-      }
+      switch (data.type) {
+        case "RUN_STARTED":
+          setCurrentTestCase(0);
+          setStepStatuses(Array(stepsPerTestCase).fill("PENDING"));
+          break;
 
-      if (data.type === "TESTCASE_FINISHED") {
-        setCurrentTestCase(data.current); // backend controls this
-      }
+        case "STEP_UPDATE":
+          setCurrentTestCase(data.testcaseIndex);
+          setStepStatuses((prev) => {
+            const next = [...prev];
+            next[data.step - 1] = data.status;
+            return next;
+          });
+          break;
 
-      if (data.type === "RUN_FINISHED") {
-        console.log("🏁 Run completed");
+        case "TESTCASE_FINISHED":
+          setStepStatuses(Array(stepsPerTestCase).fill("PENDING"));
+          setCurrentTestCase(data.current + 1);
+          break;
+        case "RUN_FINISHED":
+          console.log("🏁 Run completed");
+          ws.close();
+          break;
       }
     };
 
     ws.onclose = () => console.log("❌ WebSocket closed");
 
     return () => ws.close();
-  }, [isRunning]);
+  }, [isRunning, stepsPerTestCase]);
+
+  /* ---------- UI HELPERS ---------- */
+
+  const getStepColor = (stepIndex: number) => {
+    const status = stepStatuses[stepIndex]; // stepIndex is 0-based here
+    
+    switch (status) {
+      case "DONE":
+        return "#22C55E"; // green
+      case "RUNNING":
+        return "#F59E0B"; // orange
+      case "FAILED":
+        return "#EF4444"; // red
+      default:
+        return "#E5E7EB"; // gray (pending)
+    }
+  };
+
+  /* ---------- RENDER ---------- */
 
   return (
     <div style={{ padding: 24, maxWidth: 600 }}>
@@ -235,12 +277,38 @@ const Loop: React.FC<LoopProps> = ({ isRunning, totalTestCases }) => {
         />
       </div>
 
-      <div style={{ fontSize: 12, marginTop: 4 }}>
-        {progressPercent}%
+      <div style={{ fontSize: 12, marginTop: 4 }}>{progressPercent}%</div>
+
+      <div style={{ marginTop: 24 }}>
+        <h4>Steps</h4>
+
+        <div style={{ display: "flex", gap: 8 }}>
+          {Array.from({ length: stepsPerTestCase }).map((_, idx) => (
+            <div
+              key={idx}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: getStepColor(idx),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                color: "#111827",
+                fontWeight: 500,
+                transition: "background 0.3s ease",
+              }}
+            >
+              {idx + 1}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
 
 export default Loop;
+
 

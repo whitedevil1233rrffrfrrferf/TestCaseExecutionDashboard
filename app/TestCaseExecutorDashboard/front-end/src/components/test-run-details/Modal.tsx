@@ -133,7 +133,7 @@ function Modal({ conversationId }: ModalProps) {
         setError(null);
 
         try {
-        const res = await fetch(`http://localhost:8000/conversations/full/${conversationId}`);
+        const res = await fetch(`http://localhost:7000/conversations/full/${conversationId}`);
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         const json: FullConversationData = await res.json();
         setData(json);

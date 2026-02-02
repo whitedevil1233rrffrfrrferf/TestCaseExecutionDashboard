@@ -39,7 +39,7 @@ const TestRunsTable: React.FC<Props> = ({filters}) => {
     setLoading(true);
     
     const params = new URLSearchParams(filters).toString();
-    const url = `http://localhost:8000/get_all_test_runs?${params}`;
+    const url = `http://localhost:7000/get_all_test_runs?${params}`;
     
     fetch(url)
       .then(res => res.json())
