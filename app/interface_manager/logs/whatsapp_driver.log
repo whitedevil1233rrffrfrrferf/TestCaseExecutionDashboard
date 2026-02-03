@@ -57,3 +57,6 @@
 [2026-02-02 06:57:38,262] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
 [2026-02-02 06:57:40,339] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
 [2026-02-02 06:58:03,517] [ERROR] whatsapp_driver - Could not open chat with LLM contact.
+[2026-02-02 11:43:35,435] [ERROR] whatsapp_driver - WhatsApp Web login failed: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location
+
+[2026-02-02 11:43:35,436] [ERROR] whatsapp_driver - Could not initialize WhatsApp Web driver.
